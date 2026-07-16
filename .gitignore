@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.env
+state/ads.db
+state/ads_upload.db
+state/slack_payloads/
+*.db-wal
+*.db-shm
+.pytest_cache/

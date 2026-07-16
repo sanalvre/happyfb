@@ -1,0 +1,97 @@
+name: Weekly competitive digest
+
+on:
+  schedule:
+    - cron: "0 15 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: competitive-intel
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      - name: Pull SQLite state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -c "from src.storage import pull; pull()"
+
+      - name: Run pipeline
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+        run: python -m src.main
+
+      - name: Push SQLite state
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -c "from src.storage import push; push()"
+
+      - name: Check for skip
+        id: check
+        run: |
+          if [ -f state/slack_payloads/skip.flag ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post summary to Slack
+        if: steps.check.outputs.skip == 'false'
+        id: slack_parent
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload-file-path: state/slack_payloads/parent.json
+
+      - name: Post competitor details as thread replies
+        if: steps.check.outputs.skip == 'false'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          THREAD_TS: ${{ steps.slack_parent.outputs.ts }}
+        run: |
+          for f in state/slack_payloads/reply_*.json; do
+            [ -f "$f" ] || continue
+            jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
+              '. + {channel: $ch, thread_ts: $ts}' "$f" > /tmp/payload.json
+            curl -s -X POST \
+              -H "Content-type: application/json" \
+              -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+              -d @/tmp/payload.json \
+              https://slack.com/api/chat.postMessage
+            sleep 1
+          done
+
+      - name: Alert on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: ${{ secrets.SLACK_CHANNEL_ID }}
+            text: ":warning: Competitive intel pipeline failed this week."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: ":warning: *Competitive intel pipeline failed.* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"

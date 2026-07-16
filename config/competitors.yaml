@@ -1,0 +1,45 @@
+competitors:
+  - name: NetVendor
+    threat_level: critical
+    page_id: "REPLACE_WITH_ACTUAL_PAGE_ID"
+    notes: "Launched integrated vendor bidding March 2026. Direct VendorBids competitor."
+
+  - name: Revyse
+    threat_level: critical
+    page_id: "REPLACE"
+    notes: "AI contract mgmt + vendor discovery. Marketplace overlaps VendorBids."
+
+  - name: ServiceTitan
+    threat_level: adjacent
+    page_id: "REPLACE"
+    notes: "Vendor-side platform. Serves trades, not multifamily operators directly."
+
+  - name: Procore
+    threat_level: adjacent
+    page_id: "REPLACE"
+    notes: ""
+
+  - name: HqO
+    threat_level: watch
+    page_id: "REPLACE"
+    notes: ""
+
+  - name: Yardi
+    threat_level: watch
+    page_id: "REPLACE"
+    notes: ""
+
+  - name: RealPage
+    threat_level: watch
+    page_id: "REPLACE"
+    notes: ""
+
+  - name: AppFolio
+    threat_level: watch
+    page_id: "REPLACE"
+    notes: ""
+
+  - name: Entrata
+    threat_level: watch
+    page_id: "REPLACE"
+    notes: ""
