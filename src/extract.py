@@ -44,13 +44,13 @@ def fetch_ads(competitor: dict, access_token: str | None = None) -> list[dict]:
     while url:
         response = requests.get(url, params=params, timeout=60)
 
+        response.raise_for_status()
+
         usage_header = response.headers.get("X-App-Usage", "")
         if usage_header:
             usage_data = json.loads(usage_header)
-            if int(usage_data.get("call_count", 0)) > 80:
+            if float(usage_data.get("call_count", 0)) > 80:
                 time.sleep(60)
-
-        response.raise_for_status()
         data = response.json()
 
         all_ads.extend(data.get("data", []))

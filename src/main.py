@@ -77,7 +77,7 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
             failed += 1
             print(f"  ERROR processing {comp['name']}: {e}", file=sys.stderr)
 
-    digest_result = build_digest(week_of, analyses)
+    digest_result = build_digest(week_of, analyses) if analyses else None
 
     status = "success" if failed == 0 else ("partial" if analyses else "failed")
     db.execute(
@@ -87,6 +87,9 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
     )
     db.commit()
     db.close()
+
+    if status == "failed":
+        raise RuntimeError(f"Pipeline failed: all {failed} competitors errored")
 
     return {
         "run_id": run_id,
@@ -99,11 +102,16 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
 
 def run_backfill(days: int, competitors: list[dict] | None = None,
                  db_path: str | None = None) -> None:
-    """Seed historical data by fetching all ads (no LLM analysis)."""
+    """Seed historical data by fetching all available ads (no LLM analysis).
+
+    The days parameter is accepted for CLI compatibility but the Meta Ads
+    Library API returns all available ads regardless of date range.
+    """
     if competitors is None:
         competitors = load_competitors()
 
     db = init_db(db_path) if db_path else init_db()
+    print(f"Backfilling all available ads (requested {days} days)")
 
     for comp in competitors:
         try:

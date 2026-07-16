@@ -49,13 +49,22 @@ def analyze_competitor(competitor: dict, diff: dict, prior_themes: list,
 
 def build_analysis_result(competitor: dict, diff: dict, analysis: dict) -> dict:
     """Merge competitor info, diff stats, and LLM analysis into one result."""
+    raw_themes = analysis.get("themes", [])
+    themes = [str(t) for t in raw_themes] if raw_themes else []
+
+    try:
+        threat = int(float(analysis.get("threat_assessment", 1)))
+    except (ValueError, TypeError):
+        threat = 1
+    threat = max(1, min(5, threat))
+
     return {
         "competitor": competitor,
         "headline": analysis.get("headline", "steady state, no notable changes."),
-        "themes": analysis.get("themes", []),
+        "themes": themes,
         "messaging_shift": analysis.get("messaging_shift"),
         "icp_signal": analysis.get("icp_signal", "unclear"),
-        "threat_assessment": analysis.get("threat_assessment", 1),
+        "threat_assessment": threat,
         "notable_creatives": analysis.get("notable_creatives", []),
         "suggested_action": analysis.get("suggested_action"),
         "new_count": diff["new_count"],

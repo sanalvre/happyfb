@@ -122,6 +122,14 @@ class TestFullPipeline:
         assert result["competitors_failed"] == 1
 
     @patch("src.main.fetch_ads")
+    def test_total_failure_raises(self, mock_fetch, mock_competitors, tmp_path):
+        mock_fetch.side_effect = ConnectionError("API down")
+        db_path = str(tmp_path / "test.db")
+
+        with pytest.raises(RuntimeError, match="all .* competitors errored"):
+            run_pipeline(competitors=mock_competitors, db_path=db_path, dry_run=True)
+
+    @patch("src.main.fetch_ads")
     @patch("src.main.analyze_competitor")
     @patch("src.main.build_digest")
     def test_digest_files_created(self, mock_digest, mock_analyze, mock_fetch,

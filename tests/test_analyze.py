@@ -91,3 +91,37 @@ class TestBuildAnalysisResult:
         assert result["threat_assessment"] == 1
         assert result["icp_signal"] == "unclear"
         assert result["themes"] == []
+
+    def test_coerces_float_threat(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"threat_assessment": 3.5, "themes": ["test"]}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert result["threat_assessment"] == 3
+        assert isinstance(result["threat_assessment"], int)
+
+    def test_coerces_string_threat(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"threat_assessment": "4", "themes": ["test"]}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert result["threat_assessment"] == 4
+
+    def test_clamps_threat_to_range(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+
+        result = build_analysis_result(sample_competitor, diff, {"threat_assessment": 99})
+        assert result["threat_assessment"] == 5
+
+        result = build_analysis_result(sample_competitor, diff, {"threat_assessment": -1})
+        assert result["threat_assessment"] == 1
+
+    def test_coerces_non_string_themes(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"themes": [{"name": "pricing"}, 42]}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert all(isinstance(t, str) for t in result["themes"])

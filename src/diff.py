@@ -29,7 +29,19 @@ def compute_diff(competitor: str, scraped_ads: list[dict], db: sqlite3.Connectio
     for ad_id in ended_ids:
         row = db.execute("SELECT * FROM ads WHERE ad_id = ?", (ad_id,)).fetchone()
         if row:
-            ended_ads.append(dict(row))
+            ended_ads.append({
+                "ad_id": row["ad_id"],
+                "creative_body": row["creative_body"],
+                "creative_title": row["creative_title"],
+                "cta_text": row["cta_text"],
+                "snapshot_url": row["snapshot_url"],
+                "platforms": row["platforms"],
+                "start_date": row["start_date"],
+                "end_date": row["end_date"],
+                "first_seen": row["first_seen"],
+                "last_seen": row["last_seen"],
+                "raw_json": row["raw_json"],
+            })
         db.execute(
             "UPDATE ads SET status = 'ended', end_date = ?, last_seen = ? WHERE ad_id = ?",
             (today, today, ad_id),
@@ -39,18 +51,24 @@ def compute_diff(competitor: str, scraped_ads: list[dict], db: sqlite3.Connectio
         db.execute("""
             INSERT INTO ads (ad_id, competitor, first_seen, last_seen, status,
                            creative_body, creative_title, cta_text, snapshot_url,
-                           platforms, start_date, raw_json)
-            VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)
+                           platforms, start_date, end_date, raw_json)
+            VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(ad_id) DO UPDATE SET
                 last_seen = excluded.last_seen,
                 status = 'active',
+                end_date = NULL,
                 creative_body = excluded.creative_body,
-                creative_title = excluded.creative_title
+                creative_title = excluded.creative_title,
+                cta_text = excluded.cta_text,
+                snapshot_url = excluded.snapshot_url,
+                platforms = excluded.platforms,
+                start_date = excluded.start_date,
+                raw_json = excluded.raw_json
         """, (
             ad["ad_id"], competitor, today, today,
             ad["creative_body"], ad["creative_title"], ad["cta_text"],
             ad["snapshot_url"], ad["platforms"], ad["start_date"],
-            ad["raw_json"],
+            ad["end_date"], ad["raw_json"],
         ))
 
     db.commit()

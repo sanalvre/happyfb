@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 from .db import init_db, get_connection, DB_PATH
 
@@ -37,10 +38,11 @@ def pull(db_path: str | None = None) -> None:
 def push(db_path: str | None = None) -> None:
     """Upload SQLite to GitHub Releases."""
     path = db_path or DB_PATH
-    upload_path = path.replace(".db", "_upload.db")
+    p = Path(path)
+    upload_path = str(p.parent / (p.stem + "_upload" + p.suffix))
 
     conn = get_connection(path)
-    conn.execute(f"VACUUM INTO '{upload_path}'")
+    conn.execute("VACUUM INTO ?", (upload_path,))
     conn.close()
 
     subprocess.run(
