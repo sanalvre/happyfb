@@ -91,6 +91,9 @@ def sample_analysis():
         "messaging_shift": "New Yardi integration messaging not seen in prior weeks",
         "icp_signal": "operators",
         "threat_assessment": 4,
+        "creative_quality": 4,
+        "engagement_signal": "high",
+        "why_it_works": "Strong social proof with customer count, clear ROI claim",
         "notable_creatives": ["ad_001", "ad_002"],
         "suggested_action": "Review NetVendor's Yardi integration claims and flag for Jindou",
     }

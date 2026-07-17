@@ -1,0 +1,48 @@
+trades:
+  - name: HVAC
+    search_terms:
+      - "HVAC contractor"
+      - "heating and cooling services"
+      - "air conditioning contractor"
+
+  - name: Plumbing
+    search_terms:
+      - "plumbing contractor"
+      - "commercial plumber"
+      - "plumbing services"
+
+  - name: Electrical
+    search_terms:
+      - "electrical contractor"
+      - "commercial electrician"
+      - "electrician services"
+
+  - name: Landscaping
+    search_terms:
+      - "commercial landscaping"
+      - "landscaping company"
+      - "property landscaping"
+
+  - name: Painting
+    search_terms:
+      - "painting contractor"
+      - "commercial painting"
+      - "interior painting services"
+
+  - name: Roofing
+    search_terms:
+      - "roofing contractor"
+      - "commercial roofing"
+      - "roof repair services"
+
+  - name: Cleaning
+    search_terms:
+      - "janitorial services"
+      - "commercial cleaning"
+      - "property cleaning services"
+
+  - name: General Maintenance
+    search_terms:
+      - "property maintenance company"
+      - "building maintenance services"
+      - "facility maintenance"

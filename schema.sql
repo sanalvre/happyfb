@@ -53,6 +53,30 @@ CREATE TABLE IF NOT EXISTS weekly_snapshots (
   PRIMARY KEY (week_of, competitor)
 );
 
+CREATE TABLE IF NOT EXISTS contractors (
+  page_id TEXT PRIMARY KEY,
+  page_name TEXT NOT NULL,
+  trade TEXT NOT NULL,
+  first_seen DATE NOT NULL,
+  last_seen DATE NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',
+  website TEXT,
+  phone TEXT,
+  email TEXT,
+  city TEXT,
+  state TEXT,
+  ad_count INTEGER DEFAULT 0,
+  relevance_score INTEGER,
+  serves_multifamily BOOLEAN,
+  company_size_signal TEXT,
+  sample_ad_text TEXT,
+  notes TEXT,
+  raw_json TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_contractors_trade ON contractors(trade);
+CREATE INDEX IF NOT EXISTS idx_contractors_status ON contractors(status);
+
 CREATE TABLE IF NOT EXISTS pipeline_runs (
   run_id TEXT PRIMARY KEY,
   started_at TIMESTAMP,
@@ -60,5 +84,6 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
   status TEXT,
   competitors_processed INTEGER,
   competitors_failed INTEGER,
+  contractors_found INTEGER,
   error_log TEXT
 );

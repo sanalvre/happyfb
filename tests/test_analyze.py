@@ -77,6 +77,9 @@ class TestBuildAnalysisResult:
         assert result["competitor"]["name"] == "NetVendor"
         assert result["headline"] == sample_analysis["headline"]
         assert result["threat_assessment"] == 4
+        assert result["creative_quality"] == 4
+        assert result["engagement_signal"] == "high"
+        assert result["why_it_works"] is not None
         assert result["new_count"] == 3
         assert result["active_count"] == 10
         assert result["icp_signal"] == "operators"
@@ -89,6 +92,9 @@ class TestBuildAnalysisResult:
 
         assert result["headline"] == "steady state, no notable changes."
         assert result["threat_assessment"] == 1
+        assert result["creative_quality"] == 1
+        assert result["engagement_signal"] == "low"
+        assert result["why_it_works"] is None
         assert result["icp_signal"] == "unclear"
         assert result["themes"] == []
 

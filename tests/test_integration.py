@@ -70,6 +70,7 @@ class TestFullPipeline:
             competitors=mock_competitors,
             db_path=db_path,
             dry_run=True,
+            skip_leads=True,
         )
 
         assert result["status"] == "success"
@@ -90,6 +91,7 @@ class TestFullPipeline:
             competitors=mock_competitors,
             db_path=db_path,
             dry_run=False,
+            skip_leads=True,
         )
 
         assert result["status"] == "success"
@@ -115,6 +117,7 @@ class TestFullPipeline:
             competitors=mock_competitors,
             db_path=db_path,
             dry_run=False,
+            skip_leads=True,
         )
 
         assert result["status"] == "partial"
@@ -127,7 +130,8 @@ class TestFullPipeline:
         db_path = str(tmp_path / "test.db")
 
         with pytest.raises(RuntimeError, match="all .* competitors errored"):
-            run_pipeline(competitors=mock_competitors, db_path=db_path, dry_run=True)
+            run_pipeline(competitors=mock_competitors, db_path=db_path,
+                         dry_run=True, skip_leads=True)
 
     @patch("src.main.fetch_ads")
     @patch("src.main.analyze_competitor")
@@ -137,13 +141,15 @@ class TestFullPipeline:
                                    mock_analysis, tmp_path):
         mock_fetch.return_value = mock_ads_response
         mock_analyze.return_value = mock_analysis
-        mock_digest.return_value = {"active_count": 2, "total_count": 2, "max_threat": 3, "files_written": 3}
+        mock_digest.return_value = {"active_count": 2, "total_count": 2, "max_threat": 3,
+                                    "contractors_found": 0, "files_written": 3}
         db_path = str(tmp_path / "test.db")
 
         result = run_pipeline(
             competitors=mock_competitors,
             db_path=db_path,
             dry_run=False,
+            skip_leads=True,
         )
 
         assert result["digest"] is not None
@@ -156,10 +162,12 @@ class TestFullPipeline:
         mock_fetch.return_value = mock_ads_response
         db_path = str(tmp_path / "test.db")
 
-        run_pipeline(competitors=mock_competitors, db_path=db_path, dry_run=True)
+        run_pipeline(competitors=mock_competitors, db_path=db_path,
+                     dry_run=True, skip_leads=True)
 
         # Second run: same ads, nothing should be new
-        result = run_pipeline(competitors=mock_competitors, db_path=db_path, dry_run=True)
+        result = run_pipeline(competitors=mock_competitors, db_path=db_path,
+                              dry_run=True, skip_leads=True)
 
         assert result["status"] == "success"
 
@@ -169,7 +177,8 @@ class TestFullPipeline:
         mock_fetch.return_value = mock_ads_response
         db_path = str(tmp_path / "test.db")
 
-        result = run_pipeline(competitors=mock_competitors, db_path=db_path, dry_run=True)
+        result = run_pipeline(competitors=mock_competitors, db_path=db_path,
+                              dry_run=True, skip_leads=True)
 
         from src.db import get_connection
         conn = get_connection(db_path)

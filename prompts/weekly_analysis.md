@@ -43,11 +43,23 @@ Return ONLY a JSON object with these fields:
 5. `threat_assessment` - integer 1-5, where 1 is noise and 5 is act on this
    immediately. Include reasoning in one sentence.
 
-6. `notable_creatives` - array of up to 3 ad_ids worth reviewing for
+6. `creative_quality` - integer 1-5. How strong is the creative execution?
+   Consider clarity, specificity, social proof, call-to-action strength,
+   and visual/copy sophistication.
+
+7. `engagement_signal` - one of: "low", "medium", "high". Based on how
+   likely the ad is to resonate with the target audience, drive clicks,
+   and generate conversation.
+
+8. `why_it_works` - one sentence: what makes the strongest ad this week
+   compelling? Focus on the creative technique (social proof, urgency,
+   specific ROI claim, emotional hook, etc.). null if nothing stands out.
+
+9. `notable_creatives` - array of up to 3 ad_ids worth reviewing for
    messaging reference.
 
-7. `suggested_action` - one sentence: what should the VendorBids team do
-   with this information, if anything? Or null if no action warranted.
+10. `suggested_action` - one sentence: what should the VendorBids team do
+    with this information, if anything? Or null if no action warranted.
 
 Do not use em dashes. Use commas or parentheses instead. Do not use the
 word "marketplace" to describe VendorBids (competitors may use it about

@@ -67,6 +67,16 @@ def build_analysis_result(competitor: dict, diff: dict, analysis: dict) -> dict:
         threat = 1
     threat = max(1, min(5, threat))
 
+    try:
+        creative_quality = int(float(analysis.get("creative_quality", 1)))
+    except (ValueError, TypeError):
+        creative_quality = 1
+    creative_quality = max(1, min(5, creative_quality))
+
+    engagement = analysis.get("engagement_signal", "low")
+    if engagement not in ("low", "medium", "high"):
+        engagement = "low"
+
     return {
         "competitor": competitor,
         "headline": analysis.get("headline", "steady state, no notable changes."),
@@ -74,6 +84,9 @@ def build_analysis_result(competitor: dict, diff: dict, analysis: dict) -> dict:
         "messaging_shift": analysis.get("messaging_shift"),
         "icp_signal": analysis.get("icp_signal", "unclear"),
         "threat_assessment": threat,
+        "creative_quality": creative_quality,
+        "engagement_signal": engagement,
+        "why_it_works": analysis.get("why_it_works"),
         "notable_creatives": analysis.get("notable_creatives", []),
         "suggested_action": analysis.get("suggested_action"),
         "new_count": diff["new_count"],

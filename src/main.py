@@ -12,6 +12,8 @@ from .extract import fetch_ads
 from .diff import compute_diff, get_prior_themes, save_snapshot
 from .analyze import analyze_competitor, build_analysis_result
 from .digest import build_digest
+from .discover import discover_contractors, load_trades
+from .enrich import enrich_contractors
 from .logging_config import setup_logging, get_logger
 
 log = get_logger("main")
@@ -26,8 +28,8 @@ def load_competitors(config_path: Path | None = None) -> list[dict]:
 
 
 def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = None,
-                 dry_run: bool = False) -> dict:
-    """Run the full extract-diff-analyze-digest pipeline."""
+                 dry_run: bool = False, skip_leads: bool = False) -> dict:
+    """Run the full pipeline: competitor tracking + contractor discovery."""
     if competitors is None:
         competitors = load_competitors()
 
@@ -43,6 +45,7 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
     )
     db.commit()
 
+    # --- Track 1: Competitor creative watch ---
     analyses = []
     failed = 0
 
@@ -66,6 +69,9 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
                     "messaging_shift": None,
                     "icp_signal": "unclear",
                     "threat_assessment": 1,
+                    "creative_quality": 1,
+                    "engagement_signal": "low",
+                    "why_it_works": None,
                     "notable_creatives": [],
                     "suggested_action": None,
                 }
@@ -76,26 +82,54 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
 
             result = build_analysis_result(comp, diff, analysis)
             analyses.append(result)
-            log.info("  Threat: %s/5 - %s",
-                     analysis.get("threat_assessment", "?"), analysis.get("headline", "N/A"))
+            log.info("  Threat: %s/5, Creative: %s/5 - %s",
+                     analysis.get("threat_assessment", "?"),
+                     analysis.get("creative_quality", "?"),
+                     analysis.get("headline", "N/A"))
 
         except Exception as e:
             failed += 1
             log.error("ERROR processing %s: %s", comp["name"], e, exc_info=True)
 
-    digest_result = build_digest(week_of, analyses) if analyses else None
+    # --- Track 2: Contractor lead discovery ---
+    new_contractors = []
+    contractors_found = 0
+
+    if not skip_leads:
+        try:
+            log.info("Starting contractor discovery...")
+            discovery = discover_contractors(db=db)
+            new_contractors = discovery["new_contractors"]
+            contractors_found = discovery["total_new"]
+
+            if new_contractors and not dry_run:
+                log.info("Enriching %d new contractors...", len(new_contractors))
+                new_contractors = enrich_contractors(new_contractors, db)
+            elif new_contractors and dry_run:
+                log.info("Dry run: skipping enrichment for %d contractors", len(new_contractors))
+
+        except Exception as e:
+            log.error("Contractor discovery failed: %s", e, exc_info=True)
+
+    # --- Build digest ---
+    digest_result = build_digest(
+        week_of, analyses,
+        contractors=new_contractors if new_contractors else None,
+    ) if (analyses or new_contractors) else None
 
     status = "success" if failed == 0 else ("partial" if analyses else "failed")
     db.execute(
         "UPDATE pipeline_runs SET completed_at = ?, status = ?, "
-        "competitors_processed = ?, competitors_failed = ? WHERE run_id = ?",
-        (datetime.utcnow().isoformat(), status, len(analyses), failed, run_id),
+        "competitors_processed = ?, competitors_failed = ?, contractors_found = ? "
+        "WHERE run_id = ?",
+        (datetime.utcnow().isoformat(), status, len(analyses), failed,
+         contractors_found, run_id),
     )
     db.commit()
     db.close()
 
-    log.info("Pipeline %s finished: status=%s processed=%d failed=%d",
-             run_id, status, len(analyses), failed)
+    log.info("Pipeline %s finished: status=%s processed=%d failed=%d contractors=%d",
+             run_id, status, len(analyses), failed, contractors_found)
 
     if status == "failed":
         raise RuntimeError(f"Pipeline failed: all {failed} competitors errored")
@@ -105,6 +139,7 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
         "status": status,
         "competitors_processed": len(analyses),
         "competitors_failed": failed,
+        "contractors_found": contractors_found,
         "digest": digest_result,
     }
 
@@ -140,6 +175,8 @@ def main():
     parser.add_argument("--backfill", type=int, metavar="DAYS",
                         help="Backfill N days of historical ads (no LLM)")
     parser.add_argument("--competitor", type=str, help="Process only this competitor")
+    parser.add_argument("--skip-leads", action="store_true",
+                        help="Skip contractor lead discovery")
     args = parser.parse_args()
 
     competitors = load_competitors()
@@ -154,7 +191,8 @@ def main():
     if args.backfill:
         run_backfill(args.backfill, competitors)
     else:
-        result = run_pipeline(competitors, dry_run=args.dry_run)
+        result = run_pipeline(competitors, dry_run=args.dry_run,
+                              skip_leads=args.skip_leads)
         log.info(json.dumps(result, indent=2, default=str))
 
 
