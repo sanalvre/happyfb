@@ -143,6 +143,10 @@ def enrich_contractors(contractors: list[dict], db: sqlite3.Connection,
                 relevance = 1
             relevance = max(1, min(5, relevance))
 
+            size_signal = analysis.get("company_size_signal", "unknown")
+            if size_signal not in ("small", "midsize", "large", "unknown"):
+                size_signal = "unknown"
+
             contact = {}
             try:
                 contact = fetch_page_contact(c["page_id"], access_token=access_token)
@@ -164,7 +168,7 @@ def enrich_contractors(contractors: list[dict], db: sqlite3.Connection,
             """, (
                 relevance,
                 analysis.get("serves_multifamily", False),
-                analysis.get("company_size_signal", "unknown"),
+                size_signal,
                 analysis.get("city"),
                 analysis.get("state"),
                 analysis.get("notes"),
@@ -177,7 +181,7 @@ def enrich_contractors(contractors: list[dict], db: sqlite3.Connection,
             c.update({
                 "relevance_score": relevance,
                 "serves_multifamily": analysis.get("serves_multifamily", False),
-                "company_size_signal": analysis.get("company_size_signal", "unknown"),
+                "company_size_signal": size_signal,
                 "city": analysis.get("city"),
                 "state": analysis.get("state"),
                 "notes": analysis.get("notes"),

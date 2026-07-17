@@ -27,5 +27,17 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
 def init_db(db_path: str | None = None) -> sqlite3.Connection:
     conn = get_connection(db_path)
     conn.executescript(SCHEMA_PATH.read_text())
+    _run_migrations(conn)
     log.debug("Database initialized at %s", db_path or DB_PATH)
     return conn
+
+
+def _run_migrations(conn: sqlite3.Connection) -> None:
+    """Add columns that may be missing from older databases."""
+    existing = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info(pipeline_runs)").fetchall()
+    }
+    if "contractors_found" not in existing:
+        conn.execute("ALTER TABLE pipeline_runs ADD COLUMN contractors_found INTEGER")
+        log.info("Migrated pipeline_runs: added contractors_found column")

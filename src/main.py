@@ -2,17 +2,17 @@ import argparse
 import json
 import sys
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
 
-from .db import init_db, get_connection
+from .db import init_db
 from .extract import fetch_ads
 from .diff import compute_diff, get_prior_themes, save_snapshot
 from .analyze import analyze_competitor, build_analysis_result
 from .digest import build_digest
-from .discover import discover_contractors, load_trades
+from .discover import discover_contractors
 from .enrich import enrich_contractors
 from .logging_config import setup_logging, get_logger
 
