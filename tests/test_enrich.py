@@ -162,3 +162,44 @@ class TestEnrichContractors:
 
         result = enrich_contractors([contractor], tmp_db, api_key="test_key")
         assert result[0]["relevance_score"] == 5
+
+    @patch("src.enrich.fetch_page_contact")
+    @patch("src.enrich.enrich_contractor")
+    def test_validates_company_size_signal(self, mock_enrich, mock_contact, tmp_db):
+        mock_enrich.return_value = {
+            "relevance_score": 3,
+            "serves_multifamily": True,
+            "company_size_signal": "mega-corp",
+        }
+        mock_contact.return_value = {}
+
+        contractor = {"page_id": "pg_v", "page_name": "Test", "trade": "HVAC"}
+        tmp_db.execute("""
+            INSERT INTO contractors (page_id, page_name, trade, first_seen, last_seen)
+            VALUES ('pg_v', 'Test', 'HVAC', '2026-07-16', '2026-07-16')
+        """)
+        tmp_db.commit()
+
+        result = enrich_contractors([contractor], tmp_db, api_key="test_key")
+        assert result[0]["company_size_signal"] == "unknown"
+
+        row = tmp_db.execute("SELECT company_size_signal FROM contractors WHERE page_id = 'pg_v'").fetchone()
+        assert row["company_size_signal"] == "unknown"
+
+    @patch("src.enrich.fetch_page_contact")
+    @patch("src.enrich.enrich_contractor")
+    def test_failed_enrichment_returns_unenriched_contractor(self, mock_enrich, mock_contact, tmp_db):
+        mock_enrich.side_effect = ConnectionError("API down")
+
+        contractor = {"page_id": "pg_f", "page_name": "FailCo", "trade": "Plumbing",
+                      "ad_count": 1, "sample_ad_text": "Best plumber"}
+        tmp_db.execute("""
+            INSERT INTO contractors (page_id, page_name, trade, first_seen, last_seen)
+            VALUES ('pg_f', 'FailCo', 'Plumbing', '2026-07-16', '2026-07-16')
+        """)
+        tmp_db.commit()
+
+        result = enrich_contractors([contractor], tmp_db, api_key="test_key")
+
+        assert result[0]["page_name"] == "FailCo"
+        assert result[0].get("relevance_score") is None

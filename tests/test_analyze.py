@@ -131,3 +131,59 @@ class TestBuildAnalysisResult:
         result = build_analysis_result(sample_competitor, diff, analysis)
 
         assert all(isinstance(t, str) for t in result["themes"])
+
+    def test_invalid_engagement_signal_defaults_to_low(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"engagement_signal": "very high", "creative_quality": "3.7"}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert result["engagement_signal"] == "low"
+        assert result["creative_quality"] == 3
+
+    def test_ignores_unknown_llm_fields(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"headline": "test", "extra_field": "should be ignored",
+                    "confidence": 0.95, "reasoning": "because"}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert "extra_field" not in result
+        assert "confidence" not in result
+
+    def test_threat_as_none(self, sample_competitor):
+        diff = {"new_count": 0, "ended_count": 0, "active_count": 0, "new": [], "ended": []}
+        analysis = {"threat_assessment": None}
+
+        result = build_analysis_result(sample_competitor, diff, analysis)
+
+        assert result["threat_assessment"] == 1
+
+
+class TestLLMResponseParsing:
+    @patch("src.analyze.requests.post")
+    def test_llm_returns_markdown_fenced_json(self, mock_post, sample_competitor):
+        fenced = '```json\n{"headline": "test", "themes": ["a"]}\n```'
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": fenced}}]
+        }
+        mock_post.return_value = mock_response
+
+        diff = {"week_of": "2026-07-14", "new_count": 0, "ended_count": 0,
+                "active_count": 0, "prev_active_count": 0, "new": [], "ended": []}
+
+        with pytest.raises(json.JSONDecodeError):
+            analyze_competitor(sample_competitor, diff, [], api_key="test_key")
+
+    @patch("src.analyze.requests.post")
+    def test_llm_http_error_propagates(self, mock_post, sample_competitor):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("503 Server Error")
+        mock_post.return_value = mock_response
+
+        diff = {"week_of": "2026-07-14", "new_count": 0, "ended_count": 0,
+                "active_count": 0, "prev_active_count": 0, "new": [], "ended": []}
+
+        with pytest.raises(Exception, match="503"):
+            analyze_competitor(sample_competitor, diff, [], api_key="test_key")

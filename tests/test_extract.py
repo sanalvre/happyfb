@@ -101,3 +101,58 @@ class TestFetchAds:
         fetch_ads(sample_competitor, access_token="test_token")
 
         mock_sleep.assert_called_once_with(60)
+
+    @patch("src.extract.requests.get")
+    def test_http_error_propagates(self, mock_get, sample_competitor):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("429 Too Many Requests")
+        mock_get.return_value = mock_response
+
+        with pytest.raises(Exception, match="429"):
+            fetch_ads(sample_competitor, access_token="test_token")
+
+    @patch("src.extract.requests.get")
+    def test_malformed_usage_header_ignored(self, mock_get, sample_competitor):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [{"id": "ad_1"}], "paging": {}}
+        mock_response.headers = {"X-App-Usage": "not-json"}
+        mock_get.return_value = mock_response
+
+        with pytest.raises(json.JSONDecodeError):
+            fetch_ads(sample_competitor, access_token="test_token")
+
+    @patch("src.extract.requests.get")
+    def test_api_params_include_page_id(self, mock_get, sample_competitor):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"data": [], "paging": {}}
+        mock_response.headers = {}
+        mock_get.return_value = mock_response
+
+        fetch_ads(sample_competitor, access_token="test_token")
+
+        call_args = mock_get.call_args
+        params = call_args.kwargs.get("params") or call_args[1].get("params")
+        assert params["search_page_ids"] == sample_competitor["page_id"]
+        assert params["ad_reached_countries"] == "US"
+        assert "id" in params["fields"]
+
+
+class TestNormalizeAdEdgeCases:
+    def test_unicode_in_creative_body(self):
+        ad = {
+            "id": "ad_unicode",
+            "ad_creative_bodies": ["Save money! \U0001f4b0 Best HVAC in town ❤️"],
+            "page_name": "Test",
+        }
+        result = normalize_ad(ad)
+        assert "\U0001f4b0" in result["creative_body"]
+
+    def test_very_long_creative_body(self):
+        ad = {
+            "id": "ad_long",
+            "ad_creative_bodies": ["x" * 10000],
+            "page_name": "Test",
+        }
+        result = normalize_ad(ad)
+        assert len(result["creative_body"]) == 10000
+        assert json.loads(result["raw_json"])["id"] == "ad_long"

@@ -77,6 +77,46 @@ class TestComputeDiff:
         assert nv_count == 3
 
 
+    def test_empty_api_response_marks_all_ended(self, tmp_db, sample_raw_ads):
+        """If the API returns 0 ads, all active ads are marked as ended.
+
+        This is correct behavior when the competitor genuinely stopped all ads,
+        but could be a false positive if the API errored silently. The pipeline
+        catches API errors upstream before reaching compute_diff.
+        """
+        compute_diff("NetVendor", sample_raw_ads, tmp_db)
+        diff = compute_diff("NetVendor", [], tmp_db)
+
+        assert diff["ended_count"] == 3
+        assert diff["active_count"] == 0
+        assert diff["new_count"] == 0
+
+    def test_reactivated_ad_clears_end_date(self, tmp_db, sample_raw_ads):
+        compute_diff("NetVendor", sample_raw_ads, tmp_db)
+        compute_diff("NetVendor", sample_raw_ads[:2], tmp_db)
+
+        row = tmp_db.execute("SELECT status, end_date FROM ads WHERE ad_id = 'ad_003'").fetchone()
+        assert row["status"] == "ended"
+        assert row["end_date"] is not None
+
+        compute_diff("NetVendor", sample_raw_ads, tmp_db)
+
+        row = tmp_db.execute("SELECT status, end_date FROM ads WHERE ad_id = 'ad_003'").fetchone()
+        assert row["status"] == "active"
+        assert row["end_date"] is None
+
+    def test_ended_ads_have_consistent_schema(self, tmp_db, sample_raw_ads):
+        compute_diff("NetVendor", sample_raw_ads, tmp_db)
+        diff = compute_diff("NetVendor", sample_raw_ads[:2], tmp_db)
+
+        ended = diff["ended"][0]
+        new_keys = set(diff["new"][0].keys()) if diff["new"] else None
+
+        required_keys = {"ad_id", "creative_body", "creative_title", "cta_text",
+                         "snapshot_url", "platforms", "start_date", "end_date"}
+        assert required_keys.issubset(set(ended.keys()))
+
+
 class TestGetPriorThemes:
     def test_no_history(self, tmp_db):
         result = get_prior_themes("NetVendor", tmp_db)

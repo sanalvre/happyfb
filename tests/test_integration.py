@@ -208,6 +208,42 @@ class TestLoadCompetitors:
         assert competitors[0]["name"] == "Test"
 
 
+class TestDatabaseMigration:
+    def test_migration_adds_contractors_found_column(self, tmp_path):
+        """Verify migration handles pre-pivot databases that lack contractors_found."""
+        from src.db import get_connection, _run_migrations
+
+        db_path = str(tmp_path / "old.db")
+        conn = get_connection(db_path)
+        conn.execute("""
+            CREATE TABLE pipeline_runs (
+                run_id TEXT PRIMARY KEY,
+                started_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                status TEXT,
+                competitors_processed INTEGER,
+                competitors_failed INTEGER,
+                error_log TEXT
+            )
+        """)
+        conn.commit()
+
+        _run_migrations(conn)
+
+        conn.execute(
+            "INSERT INTO pipeline_runs (run_id, status, contractors_found) VALUES ('test', 'ok', 5)"
+        )
+        row = conn.execute("SELECT contractors_found FROM pipeline_runs WHERE run_id = 'test'").fetchone()
+        assert row[0] == 5
+        conn.close()
+
+    def test_migration_idempotent(self, tmp_db):
+        """Running migrations on a fresh DB (which already has the column) should not error."""
+        from src.db import _run_migrations
+        _run_migrations(tmp_db)
+        _run_migrations(tmp_db)
+
+
 class TestDatabaseIntegrity:
     def test_fts_search(self, tmp_db):
         """Verify FTS5 triggers populate the search index."""
