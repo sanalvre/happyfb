@@ -6,6 +6,10 @@ try:
 except ImportError:
     import sqlite3
 
+from .logging_config import get_logger
+
+log = get_logger("db")
+
 DB_PATH = os.environ.get("DB_PATH", "state/ads.db")
 SCHEMA_PATH = Path(__file__).parent.parent / "schema.sql"
 
@@ -23,4 +27,5 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
 def init_db(db_path: str | None = None) -> sqlite3.Connection:
     conn = get_connection(db_path)
     conn.executescript(SCHEMA_PATH.read_text())
+    log.debug("Database initialized at %s", db_path or DB_PATH)
     return conn

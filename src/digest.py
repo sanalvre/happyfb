@@ -2,6 +2,10 @@ import json
 import os
 from pathlib import Path
 
+from .logging_config import get_logger
+
+log = get_logger("digest")
+
 OUTPUT_DIR = Path(os.environ.get("DIGEST_OUTPUT_DIR", "state/slack_payloads"))
 
 
@@ -16,10 +20,13 @@ def build_digest(week_of: str, analyses: list[dict], output_dir: Path | None = N
     active = [a for a in analyses if a["headline"] != "steady state, no notable changes."]
 
     if not active:
+        log.info("No notable activity across %d competitors, creating skip flag", len(analyses))
         (out / "skip.flag").touch()
         return None
 
     max_threat = max(a["threat_assessment"] for a in active)
+    log.info("Building digest: %d/%d active competitors, max threat %d/5",
+             len(active), len(analyses), max_threat)
 
     parent = _build_parent(week_of, analyses, active, max_threat)
     (out / "parent.json").write_text(json.dumps(parent, indent=2))
@@ -29,11 +36,13 @@ def build_digest(week_of: str, analyses: list[dict], output_dir: Path | None = N
         slug = a["competitor"]["name"].lower().replace(" ", "_")
         (out / f"reply_{i:02d}_{slug}.json").write_text(json.dumps(reply, indent=2))
 
+    files_written = 1 + len(active)
+    log.info("Wrote %d digest files to %s", files_written, out)
     return {
         "active_count": len(active),
         "total_count": len(analyses),
         "max_threat": max_threat,
-        "files_written": 1 + len(active),
+        "files_written": files_written,
     }
 
 

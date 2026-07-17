@@ -11,4 +11,5 @@ state/ads_upload.db
 state/slack_payloads/
 *.db-wal
 *.db-shm
+state/logs/
 .pytest_cache/

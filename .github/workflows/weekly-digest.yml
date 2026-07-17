@@ -44,6 +44,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python -c "from src.storage import push; push()"
 
+      - name: Upload pipeline logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-logs
+          path: state/logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
       - name: Check for skip
         id: check
         run: |

@@ -3,6 +3,9 @@ import subprocess
 from pathlib import Path
 
 from .db import init_db, get_connection, DB_PATH
+from .logging_config import get_logger
+
+log = get_logger("storage")
 
 RELEASE_TAG = "state"
 
@@ -22,17 +25,19 @@ def pull(db_path: str | None = None) -> None:
 
     if result.returncode != 0:
         if "release not found" in result.stderr.lower() or "not found" in result.stderr.lower():
-            print("No existing state found. Initializing fresh database.")
+            log.info("No existing state found. Initializing fresh database.")
             init_db(path)
         else:
+            log.error("gh release download failed: %s", result.stderr)
             raise RuntimeError(f"Failed to download state: {result.stderr}")
     else:
         conn = get_connection(path)
         check = conn.execute("PRAGMA integrity_check").fetchone()
         conn.close()
         if check[0] != "ok":
+            log.error("Database integrity check failed: %s", check[0])
             raise RuntimeError(f"Database integrity check failed: {check[0]}")
-        print("State downloaded and verified.")
+        log.info("State downloaded and verified.")
 
 
 def push(db_path: str | None = None) -> None:
@@ -60,7 +65,8 @@ def push(db_path: str | None = None) -> None:
     )
 
     if result.returncode != 0:
+        log.error("gh release upload failed: %s", result.stderr)
         raise RuntimeError(f"Failed to upload state: {result.stderr}")
 
     os.remove(upload_path)
-    print("State uploaded to GitHub Releases.")
+    log.info("State uploaded to GitHub Releases.")

@@ -4,6 +4,10 @@ import os
 import requests
 from pathlib import Path
 
+from .logging_config import get_logger
+
+log = get_logger("analyze")
+
 OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY", "")
 MODEL = os.environ.get("LLM_MODEL", "anthropic/claude-haiku-4.5")
 PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "weekly_analysis.md"
@@ -30,6 +34,9 @@ def analyze_competitor(competitor: dict, diff: dict, prior_themes: list,
         prior_themes=json.dumps(prior_themes, indent=2, default=str),
     )
 
+    log.info("Sending analysis request for %s (model=%s)", competitor["name"], MODEL)
+    log.debug("Prompt length: %d chars", len(prompt))
+
     response = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={"Authorization": f"Bearer {key}"},
@@ -44,7 +51,9 @@ def analyze_competitor(competitor: dict, diff: dict, prior_themes: list,
     response.raise_for_status()
 
     content = response.json()["choices"][0]["message"]["content"]
-    return json.loads(content)
+    parsed = json.loads(content)
+    log.debug("LLM response keys: %s", list(parsed.keys()))
+    return parsed
 
 
 def build_analysis_result(competitor: dict, diff: dict, analysis: dict) -> dict:

@@ -4,6 +4,10 @@ import time
 
 import requests
 
+from .logging_config import get_logger
+
+log = get_logger("extract")
+
 ACCESS_TOKEN = os.environ.get("META_ACCESS_TOKEN", "")
 API_VERSION = "v21.0"
 BASE_URL = f"https://graph.facebook.com/{API_VERSION}/ads_archive"
@@ -41,7 +45,10 @@ def fetch_ads(competitor: dict, access_token: str | None = None) -> list[dict]:
     }
 
     url = BASE_URL
+    page = 0
     while url:
+        page += 1
+        log.debug("Fetching page %d for %s", page, competitor.get("name", "?"))
         response = requests.get(url, params=params, timeout=60)
 
         response.raise_for_status()
@@ -49,16 +56,23 @@ def fetch_ads(competitor: dict, access_token: str | None = None) -> list[dict]:
         usage_header = response.headers.get("X-App-Usage", "")
         if usage_header:
             usage_data = json.loads(usage_header)
-            if float(usage_data.get("call_count", 0)) > 80:
+            call_count = float(usage_data.get("call_count", 0))
+            log.debug("API usage: %.1f%%", call_count)
+            if call_count > 80:
+                log.warning("Rate limit at %.1f%%, sleeping 60s", call_count)
                 time.sleep(60)
         data = response.json()
 
-        all_ads.extend(data.get("data", []))
+        batch = data.get("data", [])
+        all_ads.extend(batch)
+        log.debug("Page %d returned %d ads (total: %d)", page, len(batch), len(all_ads))
 
         paging = data.get("paging", {})
         url = paging.get("next")
         params = {}
 
+    log.info("Fetched %d ads for %s across %d pages",
+             len(all_ads), competitor.get("name", "?"), page)
     return all_ads
 
 
