@@ -133,7 +133,9 @@ def enrich_contractors(contractors: list[dict], db: sqlite3.Connection,
     """Enrich a batch of contractors with LLM scoring and contact info."""
     enriched = []
 
-    for c in contractors:
+    for i, c in enumerate(contractors, 1):
+        log.info("Enriching contractor %d/%d: %s (%s)",
+                 i, len(contractors), c.get("page_name", "?"), c.get("trade", "?"))
         try:
             analysis = enrich_contractor(c, api_key=api_key)
 
@@ -192,7 +194,7 @@ def enrich_contractors(contractors: list[dict], db: sqlite3.Connection,
             enriched.append(c)
 
         except Exception as e:
-            log.error("Enrichment failed for %s: %s", c.get("page_name", "?"), e)
+            log.error("Enrichment failed for %s: %s", c.get("page_name", "?"), e, exc_info=True)
             enriched.append(c)
 
     db.commit()

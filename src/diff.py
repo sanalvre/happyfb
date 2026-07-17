@@ -2,16 +2,21 @@ import json
 from datetime import date
 
 from .extract import normalize_ad
+from .logging_config import get_logger
 
 try:
     import pysqlite3 as sqlite3
 except ImportError:
     import sqlite3
 
+log = get_logger("diff")
+
 
 def compute_diff(competitor: str, scraped_ads: list[dict], db: sqlite3.Connection) -> dict:
     """Compare fresh ads against stored state. Returns new, ended, and counts."""
     today = date.today().isoformat()
+
+    log.debug("Computing diff for %s with %d scraped ads", competitor, len(scraped_ads))
 
     normalized = [normalize_ad(ad) for ad in scraped_ads]
     scraped_ids = {ad["ad_id"] for ad in normalized}
@@ -24,6 +29,12 @@ def compute_diff(competitor: str, scraped_ads: list[dict], db: sqlite3.Connectio
 
     new_ads = [a for a in normalized if a["ad_id"] not in known_active_ids]
     ended_ids = known_active_ids - scraped_ids
+
+    reactivated = scraped_ids & {row[0] for row in db.execute(
+        "SELECT ad_id FROM ads WHERE competitor = ? AND status = 'ended'", (competitor,)
+    ).fetchall()}
+    if reactivated:
+        log.info("%s: %d ads reactivated", competitor, len(reactivated))
 
     ended_ads = []
     for ad_id in ended_ids:
@@ -73,6 +84,10 @@ def compute_diff(competitor: str, scraped_ads: list[dict], db: sqlite3.Connectio
 
     db.commit()
 
+    log.debug("%s diff: %d new, %d ended, %d active (was %d)",
+              competitor, len(new_ads), len(ended_ads),
+              len(scraped_ids), len(known_active_ids))
+
     return {
         "competitor": competitor,
         "week_of": today,
@@ -104,6 +119,8 @@ def get_prior_themes(competitor: str, db: sqlite3.Connection, weeks: int = 4) ->
 
 def save_snapshot(competitor: str, week_of: str, analysis: dict, diff: dict, db: sqlite3.Connection) -> None:
     """Persist weekly analysis results."""
+    log.debug("Saving snapshot for %s week %s (threat=%s)",
+              competitor, week_of, analysis.get("threat_assessment"))
     db.execute("""
         INSERT INTO weekly_snapshots
             (week_of, competitor, active_count, new_count, ended_count,

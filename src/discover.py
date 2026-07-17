@@ -123,7 +123,7 @@ def discover_contractors(trades: list[dict] | None = None,
                 contractors = extract_contractors_from_ads(ads, trade_name)
                 trade_contractors.extend(contractors)
             except Exception as e:
-                log.error("Search failed for '%s': %s", term, e)
+                log.error("Search failed for '%s': %s", term, e, exc_info=True)
 
         deduped = _dedupe_by_page_id(trade_contractors)
         log.info("Trade %s: found %d unique pages across %d search terms",
@@ -185,4 +185,7 @@ def _store_contractors(contractors: list[dict], today: str,
             new.append(c)
 
     db.commit()
+    updated = len(contractors) - len(new)
+    if new or updated:
+        log.debug("Stored contractors: %d new, %d updated", len(new), updated)
     return new
