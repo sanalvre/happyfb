@@ -195,9 +195,9 @@ class TestFullPipeline:
 class TestLoadCompetitors:
     def test_loads_config(self):
         competitors = load_competitors()
-        assert len(competitors) == 9
-        assert competitors[0]["name"] == "NetVendor"
-        assert competitors[0]["threat_level"] == "critical"
+        assert len(competitors) == 4
+        assert competitors[0]["name"] == "ServiceTitan"
+        assert competitors[0]["threat_level"] == "watch"
 
     def test_custom_path(self, tmp_path):
         config = tmp_path / "test_competitors.yaml"

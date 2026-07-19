@@ -1,45 +1,82 @@
-competitors:
-  - name: NetVendor
-    threat_level: critical
-    page_id: "REPLACE_WITH_ACTUAL_PAGE_ID"
-    notes: "Launched integrated vendor bidding March 2026. Direct VendorBids competitor."
+# Competitors with confirmed Facebook Page IDs (verified via Meta Ads Library scrape 2026-07-18)
+# Only companies with active Facebook ad presence are included.
+# Enterprise B2B companies (Yardi, RealPage, Entrata, HqO, NetVendor, Revyse, VendorPM,
+# Jones/getjones, Tailorbird) do NOT run Facebook ads — they use ABM/events marketing.
+# They are listed below as "no_facebook_ads" for reference but excluded from the active list.
 
-  - name: Revyse
-    threat_level: critical
-    page_id: "REPLACE"
-    notes: "AI contract mgmt + vendor discovery. Marketplace overlaps VendorBids."
+competitors:
+  # --- Confirmed Facebook Page IDs (active advertisers) ---
 
   - name: ServiceTitan
+    threat_level: watch
+    page_id: "179317675454866"
+    notes: "Field service mgmt for HVAC/plumbing/electrical trades (vendor-side, not PM-side). Heavy Meta ad spend. Useful for understanding contractor market messaging."
+
+  - name: Procore Technologies
     threat_level: adjacent
-    page_id: "REPLACE"
-    notes: "Vendor-side platform. Serves trades, not multifamily operators directly."
-
-  - name: Procore
-    threat_level: adjacent
-    page_id: "REPLACE"
-    notes: ""
-
-  - name: HqO
-    threat_level: watch
-    page_id: "REPLACE"
-    notes: ""
-
-  - name: Yardi
-    threat_level: watch
-    page_id: "REPLACE"
-    notes: ""
-
-  - name: RealPage
-    threat_level: watch
-    page_id: "REPLACE"
-    notes: ""
+    page_id: "47927849135"
+    notes: "Construction project/bid management. Overlaps on capital projects bidding, not routine maintenance."
 
   - name: AppFolio
-    threat_level: watch
-    page_id: "REPLACE"
-    notes: ""
+    threat_level: adjacent
+    page_id: "75233933923"
+    notes: "All-in-one PMS with Vendor Portal. Vendor sourcing via Lula partnership. SMB-focused, active Meta advertiser."
 
-  - name: Entrata
-    threat_level: watch
-    page_id: "REPLACE"
-    notes: ""
+  - name: Property Meld
+    threat_level: adjacent
+    page_id: "718426831581337"
+    notes: "Maintenance/work-order mgmt with vendor dispatch. Integrates with AppFolio/Buildium. Competes for maintenance-coordination budget."
+
+  # --- No Facebook Ads (enterprise/B2B — monitor via other channels) ---
+  # These companies are confirmed to NOT run Facebook ads as of 2026-07-18.
+  # Uncomment and add page_id if they start advertising.
+
+  # - name: NetVendor
+  #   threat_level: critical
+  #   page_id: "NEEDS_ID"
+  #   notes: "Direct VendorBids competitor. Compliance-led vendor credentialing. Acquired Nov 2025. No Meta ads detected."
+
+  # - name: Revyse
+  #   threat_level: critical
+  #   page_id: "NEEDS_ID"
+  #   notes: "AI vendor intelligence for multifamily. $2M seed (RET Ventures). Very close positioning. No Meta ads yet."
+
+  # - name: VendorPM
+  #   threat_level: critical
+  #   page_id: "NEEDS_ID"
+  #   notes: "Software-enabled vendor marketplace for PMs. 50K+ vendors, nearly identical positioning. No Meta ads."
+
+  # - name: Yardi
+  #   threat_level: critical
+  #   page_id: "NEEDS_ID"
+  #   notes: "VendorShield credentialing + Procure-to-Pay suite. Enterprise sales-led, no Meta ads."
+
+  # - name: RealPage
+  #   threat_level: critical
+  #   page_id: "NEEDS_ID"
+  #   notes: "Vendor Credentialing + Onboarding. 12K+ PMs. Enterprise ABM, no Meta ads."
+
+  # - name: HqO
+  #   threat_level: adjacent
+  #   page_id: "NEEDS_ID"
+  #   notes: "Tenant experience platform with dedicated Vendor product. CRE-focused. No Meta ads."
+
+  # - name: Entrata
+  #   threat_level: adjacent
+  #   page_id: "NEEDS_ID"
+  #   notes: "Procure-to-Pay module via NetVendor integration. Enterprise, no Meta ads."
+
+  # - name: Jones (getjones.com)
+  #   threat_level: adjacent
+  #   page_id: "NEEDS_ID"
+  #   notes: "AI COI/insurance compliance for CRE. Narrower scope (compliance only). No Meta ads."
+
+  # - name: Tailorbird
+  #   threat_level: adjacent
+  #   page_id: "NEEDS_ID"
+  #   notes: "AI capital projects/bidding for multifamily. Competes on capex/turn work. No Meta ads."
+
+  # - name: Lula
+  #   threat_level: adjacent
+  #   page_id: "NEEDS_ID"
+  #   notes: "Vendor network for maintenance dispatch. AppFolio partner. 'Lula Hair' matched on FB, not the right company."
