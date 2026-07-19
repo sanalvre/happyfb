@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import sys
 import uuid
 from datetime import date, datetime
@@ -53,7 +54,14 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
         try:
             log.info("Processing %s...", comp["name"])
 
-            raw_ads = fetch_ads(comp)
+            try:
+                raw_ads = fetch_ads(comp)
+            except ValueError as e:
+                if dry_run and "META_ACCESS_TOKEN" in str(e):
+                    log.info("  [DRY RUN] No META_ACCESS_TOKEN, using empty ad set")
+                    raw_ads = []
+                else:
+                    raise
             log.info("  Fetched %d ads", len(raw_ads))
 
             diff = compute_diff(comp["name"], raw_ads, db)
@@ -108,6 +116,11 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
             elif new_contractors and dry_run:
                 log.info("Dry run: skipping enrichment for %d contractors", len(new_contractors))
 
+        except ValueError as e:
+            if dry_run and "META_ACCESS_TOKEN" in str(e):
+                log.info("[DRY RUN] Skipping contractor discovery (no META_ACCESS_TOKEN)")
+            else:
+                log.error("Contractor discovery failed: %s", e, exc_info=True)
         except Exception as e:
             log.error("Contractor discovery failed: %s", e, exc_info=True)
 
