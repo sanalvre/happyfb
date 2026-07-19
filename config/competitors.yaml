@@ -1,82 +1,167 @@
-# Competitors with confirmed Facebook Page IDs (verified via Meta Ads Library scrape 2026-07-18)
-# Only companies with active Facebook ad presence are included.
-# Enterprise B2B companies (Yardi, RealPage, Entrata, HqO, NetVendor, Revyse, VendorPM,
-# Jones/getjones, Tailorbird) do NOT run Facebook ads — they use ABM/events marketing.
-# They are listed below as "no_facebook_ads" for reference but excluded from the active list.
+# Monitored Facebook Pages — verified via Meta Ads Library scrape 2026-07-18
+# Categories: competitor (proptech rivals), operator (PM companies / VendorBids buyers),
+#             contractor (service vendors / Vendor Connect targets)
+#
+# Enterprise B2B companies without Facebook ads are listed at the bottom as comments.
 
 competitors:
-  # --- Confirmed Facebook Page IDs (active advertisers) ---
+  # =====================================================================
+  # COMPETITORS — proptech companies that overlap with VendorBids
+  # =====================================================================
 
   - name: ServiceTitan
+    category: competitor
     threat_level: watch
     page_id: "179317675454866"
-    notes: "Field service mgmt for HVAC/plumbing/electrical trades (vendor-side, not PM-side). Heavy Meta ad spend. Useful for understanding contractor market messaging."
+    notes: "Field service mgmt for HVAC/plumbing/electrical trades. Vendor-side platform, heavy Meta ad spend."
 
   - name: Procore Technologies
+    category: competitor
     threat_level: adjacent
     page_id: "47927849135"
-    notes: "Construction project/bid management. Overlaps on capital projects bidding, not routine maintenance."
+    notes: "Construction bid management. Overlaps on capital projects bidding."
 
   - name: AppFolio
+    category: competitor
     threat_level: adjacent
     page_id: "75233933923"
-    notes: "All-in-one PMS with Vendor Portal. Vendor sourcing via Lula partnership. SMB-focused, active Meta advertiser."
+    notes: "All-in-one PMS with Vendor Portal + Lula partnership. SMB-focused."
 
   - name: Property Meld
+    category: competitor
     threat_level: adjacent
     page_id: "718426831581337"
-    notes: "Maintenance/work-order mgmt with vendor dispatch. Integrates with AppFolio/Buildium. Competes for maintenance-coordination budget."
+    notes: "Maintenance/work-order mgmt with vendor dispatch."
 
-  # --- No Facebook Ads (enterprise/B2B — monitor via other channels) ---
-  # These companies are confirmed to NOT run Facebook ads as of 2026-07-18.
-  # Uncomment and add page_id if they start advertising.
+  # =====================================================================
+  # OPERATORS — multifamily PM companies (VendorBids buyer persona)
+  # Monitoring their ads reveals: growth signals, pain points they
+  # advertise around, hiring for maintenance roles (vendor need signal)
+  # =====================================================================
 
-  # - name: NetVendor
-  #   threat_level: critical
-  #   page_id: "NEEDS_ID"
-  #   notes: "Direct VendorBids competitor. Compliance-led vendor credentialing. Acquired Nov 2025. No Meta ads detected."
+  - name: MAA Communities
+    category: operator
+    threat_level: watch
+    page_id: "103664019160"
+    notes: "REIT, ~100K units. Sun Belt focus. Active leasing ads."
 
-  # - name: Revyse
-  #   threat_level: critical
-  #   page_id: "NEEDS_ID"
-  #   notes: "AI vendor intelligence for multifamily. $2M seed (RET Ventures). Very close positioning. No Meta ads yet."
+  - name: Bozzuto
+    category: operator
+    threat_level: watch
+    page_id: "7401734044"
+    notes: "~80K+ units. Known for polished marketing, tech-forward. Strong early-adopter profile."
 
-  # - name: VendorPM
-  #   threat_level: critical
-  #   page_id: "NEEDS_ID"
-  #   notes: "Software-enabled vendor marketplace for PMs. 50K+ vendors, nearly identical positioning. No Meta ads."
+  - name: Cushman & Wakefield
+    category: operator
+    threat_level: watch
+    page_id: "100880444424"
+    notes: "Major commercial/multifamily PM. Enterprise procurement likely centralized."
 
-  # - name: Yardi
-  #   threat_level: critical
-  #   page_id: "NEEDS_ID"
-  #   notes: "VendorShield credentialing + Procure-to-Pay suite. Enterprise sales-led, no Meta ads."
+  - name: Morgan Properties
+    category: operator
+    threat_level: watch
+    page_id: "107607564525212"
+    notes: "Large East Coast multifamily operator. Active advertiser."
 
-  # - name: RealPage
-  #   threat_level: critical
-  #   page_id: "NEEDS_ID"
-  #   notes: "Vendor Credentialing + Onboarding. 12K+ PMs. Enterprise ABM, no Meta ads."
+  - name: Brookfield Properties
+    category: operator
+    threat_level: watch
+    page_id: "104231984825455"
+    notes: "Institutional owner/operator. Large multifamily + commercial portfolio."
 
-  # - name: HqO
-  #   threat_level: adjacent
-  #   page_id: "NEEDS_ID"
-  #   notes: "Tenant experience platform with dedicated Vendor product. CRE-focused. No Meta ads."
+  - name: Equity Residential
+    category: operator
+    threat_level: watch
+    page_id: "24542358504"
+    notes: "REIT, ~80K units. Urban/coastal focus. Active leasing ads."
 
-  # - name: Entrata
-  #   threat_level: adjacent
-  #   page_id: "NEEDS_ID"
-  #   notes: "Procure-to-Pay module via NetVendor integration. Enterprise, no Meta ads."
+  - name: Cortland Living
+    category: operator
+    threat_level: watch
+    page_id: "219314998208128"
+    notes: "~86K units, fast-growing. Industry-known proptech early adopter."
 
-  # - name: Jones (getjones.com)
-  #   threat_level: adjacent
-  #   page_id: "NEEDS_ID"
-  #   notes: "AI COI/insurance compliance for CRE. Narrower scope (compliance only). No Meta ads."
+  - name: RPM Living
+    category: operator
+    threat_level: watch
+    page_id: "311212508919910"
+    notes: "~241K units, aggressive Sun Belt growth. Tech-modernization narrative."
 
-  # - name: Tailorbird
-  #   threat_level: adjacent
-  #   page_id: "NEEDS_ID"
-  #   notes: "AI capital projects/bidding for multifamily. Competes on capex/turn work. No Meta ads."
+  # =====================================================================
+  # CONTRACTORS — large service vendors (Vendor Connect anchor targets)
+  # Monitoring their ads shows: how they market to PMs, what services
+  # they push, pricing signals, geographic expansion
+  # =====================================================================
 
-  # - name: Lula
-  #   threat_level: adjacent
-  #   page_id: "NEEDS_ID"
-  #   notes: "Vendor network for maintenance dispatch. AppFolio partner. 'Lula Hair' matched on FB, not the right company."
+  - name: ABM Industries
+    category: contractor
+    threat_level: watch
+    page_id: "372746739468695"
+    notes: "Facility maintenance + janitorial. $8B+ revenue. Dedicated multifamily division (65K+ units)."
+
+  - name: TruGreen
+    category: contractor
+    threat_level: watch
+    page_id: "209263565751147"
+    notes: "Largest US lawn/landscaping service. Heavy consumer ad spend."
+
+  - name: Cintas Corporation
+    category: contractor
+    threat_level: watch
+    page_id: "10401757259"
+    notes: "Facility services, uniforms, safety. Fortune 500. National presence."
+
+  - name: Terminix
+    category: contractor
+    threat_level: watch
+    page_id: "508491589196941"
+    notes: "Pest control + home services. National brand, heavy Meta ad spend."
+
+  - name: Stanley Steemer
+    category: contractor
+    threat_level: watch
+    page_id: "170576306526"
+    notes: "Carpet/floor cleaning. National franchise. Active advertiser."
+
+  - name: Mr. Rooter Plumbing
+    category: contractor
+    threat_level: watch
+    page_id: "123981044293884"
+    notes: "Neighborly franchise brand. National plumbing. Strong local FB ad programs."
+
+  - name: Davey Tree
+    category: contractor
+    threat_level: watch
+    page_id: "5846269801"
+    notes: "Tree/landscape services. National commercial coverage."
+
+  # =====================================================================
+  # NO FACEBOOK ADS — enterprise B2B (monitor via LinkedIn, blogs, events)
+  # =====================================================================
+
+  # COMPETITORS (no Meta ads):
+  # - NetVendor (critical) — Direct competitor, compliance-led credentialing. Acquired Nov 2025.
+  # - Revyse (critical) — AI vendor intelligence for multifamily. $2M seed.
+  # - VendorPM (critical) — Vendor marketplace for PMs. 50K+ vendors.
+  # - Yardi (critical) — VendorShield + Procure-to-Pay suite. Enterprise incumbent.
+  # - RealPage (critical) — Vendor Credentialing + Onboarding. 12K+ PMs.
+  # - HqO (adjacent) — Tenant experience with Vendor product. CRE-focused.
+  # - Entrata (adjacent) — Procure-to-Pay via NetVendor integration.
+  # - Jones/getjones (adjacent) — AI COI compliance. Narrower scope.
+  # - Tailorbird (adjacent) — AI capital projects/bidding.
+  # - Lula (adjacent) — Vendor network for dispatch. AppFolio partner.
+
+  # OPERATORS (no Meta ads or unverifiable):
+  # - Greystar (~1M units, largest US PM — no corporate FB ad page found)
+  # - Lincoln Property Company (large private — unverifiable)
+  # - Camden Property Trust (REIT, ~60K units — only individual community pages found)
+  # - AvalonBay Communities (REIT, ~90K units — only individual community pages found)
+  # - Alliance Residential (no corporate page found)
+  # - Avenue5 Residential (~100K units — no page found)
+  # - ZRS Management (~97K units — no page found)
+
+  # CONTRACTORS (no Meta ads or B2B-only):
+  # - BrightView (largest US commercial landscaper — no FB ads found)
+  # - Comfort Systems USA (HVAC, NYSE:FIX — B2B/recruiting only)
+  # - Lessen/SMS Assist (tech-enabled maintenance platform — more competitive than vendor)
+  # - EMCOR Group (Fortune 500 MEP — B2B only)
