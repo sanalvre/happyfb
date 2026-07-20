@@ -4,7 +4,11 @@ All notable changes to the VendorBids Competitive Intel Pipeline.
 
 ---
 
-## 2026-07-19 — Category-Aware Pipeline
+## 2026-07-19 — Category-Aware Pipeline + Audit Fix
+
+**Audit fix**: Fix missing `channel` field in all Slack parent message posts
+
+- All 4 parent post steps in `weekly-digest.yml` used `payload-file-path` pointing to JSON files that lacked a `channel` field. The `chat.postMessage` API requires it. Switched all parent posts from the `slackapi/slack-github-action` action to curl+jq (matching the reply steps), injecting `channel` from `SLACK_CHANNEL_ID` secret and capturing `ts` for thread replies.
 
 **`1a2a1da`** Make pipeline category-aware for operators and contractors
 
