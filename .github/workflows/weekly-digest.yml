@@ -71,6 +71,16 @@ jobs:
           else
             echo "has_competitors=false" >> "$GITHUB_OUTPUT"
           fi
+          if [ -f state/slack_payloads/operator_parent.json ]; then
+            echo "has_operators=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_operators=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f state/slack_payloads/contractor_intel_parent.json ]; then
+            echo "has_contractor_intel=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_contractor_intel=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Post contractor leads to Slack
         if: steps.check.outputs.has_leads == 'true'
@@ -117,6 +127,62 @@ jobs:
           THREAD_TS: ${{ steps.slack_parent.outputs.ts }}
         run: |
           for f in state/slack_payloads/reply_*.json; do
+            [ -f "$f" ] || continue
+            jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
+              '. + {channel: $ch, thread_ts: $ts}' "$f" > /tmp/payload.json
+            curl -s -X POST \
+              -H "Content-type: application/json" \
+              -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+              -d @/tmp/payload.json \
+              https://slack.com/api/chat.postMessage
+            sleep 1
+          done
+
+      - name: Post operator intelligence to Slack
+        if: steps.check.outputs.has_operators == 'true'
+        id: slack_operators
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload-file-path: state/slack_payloads/operator_parent.json
+
+      - name: Post operator details as thread replies
+        if: steps.check.outputs.has_operators == 'true'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          THREAD_TS: ${{ steps.slack_operators.outputs.ts }}
+        run: |
+          for f in state/slack_payloads/operator_reply_*.json; do
+            [ -f "$f" ] || continue
+            jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
+              '. + {channel: $ch, thread_ts: $ts}' "$f" > /tmp/payload.json
+            curl -s -X POST \
+              -H "Content-type: application/json" \
+              -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+              -d @/tmp/payload.json \
+              https://slack.com/api/chat.postMessage
+            sleep 1
+          done
+
+      - name: Post vendor intelligence to Slack
+        if: steps.check.outputs.has_contractor_intel == 'true'
+        id: slack_vendor_intel
+        uses: slackapi/slack-github-action@v4.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload-file-path: state/slack_payloads/contractor_intel_parent.json
+
+      - name: Post vendor intel details as thread replies
+        if: steps.check.outputs.has_contractor_intel == 'true'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          THREAD_TS: ${{ steps.slack_vendor_intel.outputs.ts }}
+        run: |
+          for f in state/slack_payloads/contractor_intel_reply_*.json; do
             [ -f "$f" ] || continue
             jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
               '. + {channel: $ch, thread_ts: $ts}' "$f" > /tmp/payload.json

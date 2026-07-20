@@ -11,6 +11,8 @@ OUTPUT_DIR = Path(os.environ.get("DIGEST_OUTPUT_DIR", "state/slack_payloads"))
 
 def build_digest(week_of: str, analyses: list[dict],
                  contractors: list[dict] | None = None,
+                 operator_analyses: list[dict] | None = None,
+                 contractor_analyses: list[dict] | None = None,
                  output_dir: Path | None = None) -> dict | None:
     """Build Slack Block Kit payloads and write as JSON files.
 
@@ -22,8 +24,12 @@ def build_digest(week_of: str, analyses: list[dict],
     active = [a for a in analyses if a["headline"] != "steady state, no notable changes."]
     has_contractors = bool(contractors)
     has_competitors = bool(active)
+    active_ops = [a for a in (operator_analyses or []) if a["headline"] != "steady state, no notable changes."]
+    active_cts = [a for a in (contractor_analyses or []) if a["headline"] != "steady state, no notable changes."]
+    has_operators = bool(active_ops)
+    has_contractor_intel = bool(active_cts)
 
-    if not has_contractors and not has_competitors:
+    if not has_contractors and not has_competitors and not has_operators and not has_contractor_intel:
         log.info("No notable activity and no new contractors, creating skip flag")
         (out / "skip.flag").touch()
         return None
@@ -65,13 +71,86 @@ def build_digest(week_of: str, analyses: list[dict],
     else:
         max_threat = 0
 
+    if has_operators:
+        files_written += _write_category_digest(
+            out, week_of, operator_analyses, active_ops,
+            "operator", "Operator intelligence", ":office:")
+
+    if has_contractor_intel:
+        files_written += _write_category_digest(
+            out, week_of, contractor_analyses, active_cts,
+            "contractor_intel", "Vendor intelligence", ":wrench:")
+
     log.info("Wrote %d digest files to %s", files_written, out)
     return {
         "active_count": len(active),
         "total_count": len(analyses),
         "max_threat": max_threat,
         "contractors_found": len(contractors) if contractors else 0,
+        "operators_active": len(active_ops),
+        "contractor_intel_active": len(active_cts),
         "files_written": files_written,
+    }
+
+
+def _write_category_digest(out: Path, week_of: str, all_analyses: list[dict],
+                           active: list[dict], prefix: str,
+                           title: str, emoji: str) -> int:
+    """Write parent + reply files for a category. Returns files written."""
+    max_score = max(a["threat_assessment"] for a in active)
+    parent = _build_category_parent(week_of, all_analyses, active, max_score, title, emoji)
+    (out / f"{prefix}_parent.json").write_text(json.dumps(parent, indent=2))
+    written = 1
+
+    for i, a in enumerate(active):
+        reply = _build_creative_reply(a)
+        slug = a["competitor"]["name"].lower().replace(" ", "_")
+        (out / f"{prefix}_reply_{i:02d}_{slug}.json").write_text(json.dumps(reply, indent=2))
+        written += 1
+
+    log.info("Built %s digest: %d/%d active, max score %d/5",
+             prefix, len(active), len(all_analyses), max_score)
+    return written
+
+
+def _build_category_parent(week_of: str, all_analyses: list[dict],
+                           active: list[dict], max_score: int,
+                           title: str, emoji: str) -> dict:
+    blocks = [
+        {
+            "type": "header",
+            "text": {"type": "plain_text", "text": f"{title}: week of {week_of}"},
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"{emoji} *{len(active)} of {len(all_analyses)} targets had notable activity.*\n"
+                    f"Highest opportunity score: *{max_score}/5*"
+                ),
+            },
+        },
+        {"type": "divider"},
+    ]
+
+    for a in active:
+        alert = ":rotating_light: " if a["threat_assessment"] >= 4 else ""
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"{alert}*{a['competitor']['name']}* "
+                    f"(opportunity: {a['threat_assessment']}/5): "
+                    f"{a['headline']}"
+                ),
+            },
+        })
+
+    return {
+        "text": f"VendorBids {title.lower()}, week of {week_of}",
+        "blocks": blocks,
     }
 
 

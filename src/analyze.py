@@ -10,7 +10,12 @@ log = get_logger("analyze")
 
 OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY", "")
 MODEL = os.environ.get("LLM_MODEL", "anthropic/claude-haiku-4.5")
-PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "weekly_analysis.md"
+PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
+PROMPT_PATHS = {
+    "competitor": PROMPTS_DIR / "weekly_analysis.md",
+    "operator": PROMPTS_DIR / "operator_analysis.md",
+    "contractor": PROMPTS_DIR / "contractor_analysis.md",
+}
 
 
 def analyze_competitor(competitor: dict, diff: dict, prior_themes: list,
@@ -20,7 +25,9 @@ def analyze_competitor(competitor: dict, diff: dict, prior_themes: list,
     if not key:
         raise ValueError("OPENROUTER_KEY is required")
 
-    prompt = PROMPT_PATH.read_text().format(
+    category = competitor.get("category", "competitor")
+    prompt_path = PROMPT_PATHS.get(category, PROMPT_PATHS["competitor"])
+    prompt = prompt_path.read_text().format(
         competitor_name=competitor["name"],
         threat_level=competitor["threat_level"],
         competitor_notes=competitor.get("notes", ""),

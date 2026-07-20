@@ -124,10 +124,16 @@ def run_pipeline(competitors: list[dict] | None = None, db_path: str | None = No
         except Exception as e:
             log.error("Contractor discovery failed: %s", e, exc_info=True)
 
-    # --- Build digest ---
+    # --- Build digest (segmented by category) ---
+    comp_analyses = [a for a in analyses if a["competitor"].get("category", "competitor") == "competitor"]
+    op_analyses = [a for a in analyses if a["competitor"].get("category") == "operator"]
+    ct_analyses = [a for a in analyses if a["competitor"].get("category") == "contractor"]
+
     digest_result = build_digest(
-        week_of, analyses,
+        week_of, comp_analyses,
         contractors=new_contractors if new_contractors else None,
+        operator_analyses=op_analyses if op_analyses else None,
+        contractor_analyses=ct_analyses if ct_analyses else None,
     ) if (analyses or new_contractors) else None
 
     status = "success" if failed == 0 else ("partial" if analyses else "failed")
@@ -190,10 +196,19 @@ def main():
     parser.add_argument("--competitor", type=str, help="Process only this competitor")
     parser.add_argument("--skip-leads", action="store_true",
                         help="Skip contractor lead discovery")
+    parser.add_argument("--category", type=str,
+                        choices=["competitor", "operator", "contractor"],
+                        help="Process only this category")
     args = parser.parse_args()
 
     competitors = load_competitors()
     setup_logging()
+
+    if args.category:
+        competitors = [c for c in competitors if c.get("category") == args.category]
+        if not competitors:
+            log.error("No entries found for category '%s'.", args.category)
+            sys.exit(1)
 
     if args.competitor:
         competitors = [c for c in competitors if c["name"].lower() == args.competitor.lower()]

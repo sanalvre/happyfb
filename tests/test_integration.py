@@ -142,7 +142,8 @@ class TestFullPipeline:
         mock_fetch.return_value = mock_ads_response
         mock_analyze.return_value = mock_analysis
         mock_digest.return_value = {"active_count": 2, "total_count": 2, "max_threat": 3,
-                                    "contractors_found": 0, "files_written": 3}
+                                    "contractors_found": 0, "operators_active": 0,
+                                    "contractor_intel_active": 0, "files_written": 3}
         db_path = str(tmp_path / "test.db")
 
         result = run_pipeline(

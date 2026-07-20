@@ -5,9 +5,9 @@ from src.digest import build_digest
 
 def _make_analysis(name, threat, headline, threat_level="critical",
                    creative_quality=3, engagement_signal="medium",
-                   why_it_works=None):
+                   why_it_works=None, category="competitor"):
     return {
-        "competitor": {"name": name, "threat_level": threat_level},
+        "competitor": {"name": name, "threat_level": threat_level, "category": category},
         "headline": headline,
         "themes": ["theme1", "theme2"],
         "messaging_shift": "Shifted to new messaging" if threat >= 3 else None,
@@ -216,3 +216,75 @@ class TestContractorDigest:
         reply = json.loads((tmp_output_dir / "leads_reply_00_hvac.json").read_text())
         lead_text = reply["blocks"][1]["text"]["text"]
         assert ":office:" in lead_text
+
+
+class TestOperatorDigest:
+    def test_operator_parent_written(self, tmp_output_dir):
+        ops = [_make_analysis("MAA", 3, "New leasing campaign", category="operator")]
+
+        result = build_digest("2026-07-14", [], operator_analyses=ops,
+                              output_dir=tmp_output_dir)
+
+        assert result is not None
+        assert result["operators_active"] == 1
+        assert (tmp_output_dir / "operator_parent.json").exists()
+        assert (tmp_output_dir / "operator_reply_00_maa.json").exists()
+
+    def test_operator_parent_says_operator_intelligence(self, tmp_output_dir):
+        ops = [_make_analysis("MAA", 3, "New leasing campaign", category="operator")]
+
+        build_digest("2026-07-14", [], operator_analyses=ops,
+                     output_dir=tmp_output_dir)
+
+        parent = json.loads((tmp_output_dir / "operator_parent.json").read_text())
+        assert "Operator intelligence" in parent["blocks"][0]["text"]["text"]
+        assert "opportunity" in parent["blocks"][3]["text"]["text"]
+
+    def test_operator_steady_state_skipped(self, tmp_output_dir):
+        ops = [_make_analysis("MAA", 1, "steady state, no notable changes.", category="operator")]
+
+        result = build_digest("2026-07-14", [], operator_analyses=ops,
+                              output_dir=tmp_output_dir)
+
+        assert result is None
+        assert not (tmp_output_dir / "operator_parent.json").exists()
+
+
+class TestContractorIntelDigest:
+    def test_contractor_intel_parent_written(self, tmp_output_dir):
+        cts = [_make_analysis("TruGreen", 3, "Spring campaign surge", category="contractor")]
+
+        result = build_digest("2026-07-14", [], contractor_analyses=cts,
+                              output_dir=tmp_output_dir)
+
+        assert result is not None
+        assert result["contractor_intel_active"] == 1
+        assert (tmp_output_dir / "contractor_intel_parent.json").exists()
+
+    def test_contractor_intel_parent_says_vendor_intelligence(self, tmp_output_dir):
+        cts = [_make_analysis("TruGreen", 3, "Spring campaign surge", category="contractor")]
+
+        build_digest("2026-07-14", [], contractor_analyses=cts,
+                     output_dir=tmp_output_dir)
+
+        parent = json.loads((tmp_output_dir / "contractor_intel_parent.json").read_text())
+        assert "Vendor intelligence" in parent["blocks"][0]["text"]["text"]
+
+    def test_all_categories_together(self, tmp_output_dir):
+        comps = [_make_analysis("ServiceTitan", 3, "New campaign")]
+        ops = [_make_analysis("MAA", 4, "Market expansion", category="operator")]
+        cts = [_make_analysis("TruGreen", 2, "Seasonal push", category="contractor")]
+        leads = [_make_contractor("ABC HVAC", "pg1", "HVAC")]
+
+        result = build_digest("2026-07-14", comps, contractors=leads,
+                              operator_analyses=ops, contractor_analyses=cts,
+                              output_dir=tmp_output_dir)
+
+        assert result["active_count"] == 1
+        assert result["operators_active"] == 1
+        assert result["contractor_intel_active"] == 1
+        assert result["contractors_found"] == 1
+        assert (tmp_output_dir / "parent.json").exists()
+        assert (tmp_output_dir / "operator_parent.json").exists()
+        assert (tmp_output_dir / "contractor_intel_parent.json").exists()
+        assert (tmp_output_dir / "leads_parent.json").exists()
