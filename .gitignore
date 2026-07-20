@@ -5,12 +5,10 @@ dist/
 build/
 .venv/
 venv/
-.env
-state/ads.db
-state/ads_upload.db
-state/slack_payloads/
+.env*
+!.env.example
+state/
 *.db-wal
 *.db-shm
-state/logs/
 .pytest_cache/
 site/data.json
