@@ -1,0 +1,661 @@
+<title>VendorBids Intel Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ground: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-alt: #EEF0F4;
+    --border: #D8DCE3;
+    --text: #1A2029;
+    --text-secondary: #5A6577;
+    --text-muted: #8892A0;
+    --accent: #2BA89E;
+    --accent-bg: #E8F6F4;
+    --warning: #D4943A;
+    --warning-bg: #FDF3E6;
+    --critical: #C7524A;
+    --critical-bg: #FAEAE9;
+    --score-track: #E2E5EA;
+    --card-shadow: 0 1px 3px rgba(15,20,25,0.06), 0 1px 2px rgba(15,20,25,0.04);
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0F1419;
+      --surface: #1A2029;
+      --surface-alt: #232B36;
+      --border: #2E3744;
+      --text: #E4E7EC;
+      --text-secondary: #9AA3B0;
+      --text-muted: #6B7A8D;
+      --accent: #3CC4B8;
+      --accent-bg: #1A2E2C;
+      --warning: #E5A94E;
+      --warning-bg: #2A2418;
+      --critical: #E0635B;
+      --critical-bg: #2A1A19;
+      --score-track: #2E3744;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1419;
+    --surface: #1A2029;
+    --surface-alt: #232B36;
+    --border: #2E3744;
+    --text: #E4E7EC;
+    --text-secondary: #9AA3B0;
+    --text-muted: #6B7A8D;
+    --accent: #3CC4B8;
+    --accent-bg: #1A2E2C;
+    --warning: #E5A94E;
+    --warning-bg: #2A2418;
+    --critical: #E0635B;
+    --critical-bg: #2A1A19;
+    --score-track: #2E3744;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  }
+  :root[data-theme="light"] {
+    --ground: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-alt: #EEF0F4;
+    --border: #D8DCE3;
+    --text: #1A2029;
+    --text-secondary: #5A6577;
+    --text-muted: #8892A0;
+    --accent: #2BA89E;
+    --accent-bg: #E8F6F4;
+    --warning: #D4943A;
+    --warning-bg: #FDF3E6;
+    --critical: #C7524A;
+    --critical-bg: #FAEAE9;
+    --score-track: #E2E5EA;
+    --card-shadow: 0 1px 3px rgba(15,20,25,0.06), 0 1px 2px rgba(15,20,25,0.04);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--ground);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+
+  /* --- Header --- */
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .header h1 span { color: var(--accent); }
+  .header-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- KPI strip --- */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: var(--card-shadow);
+  }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .kpi-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* --- Tabs --- */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: var(--font-body);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab .badge {
+    display: inline-block;
+    background: var(--surface-alt);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tab.active .badge {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* --- Target cards --- */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .card-category-pill {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pill-competitor { background: var(--critical-bg); color: var(--critical); }
+  .pill-operator { background: var(--accent-bg); color: var(--accent); }
+  .pill-contractor { background: var(--warning-bg); color: var(--warning); }
+
+  .card-headline {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    min-height: 38px;
+  }
+  .card-headline.steady { font-style: italic; color: var(--text-muted); }
+
+  .card-scores {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .score-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .score-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .score-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--score-track);
+  }
+  .dot.filled-accent { background: var(--accent); }
+  .dot.filled-warning { background: var(--warning); }
+  .dot.filled-critical { background: var(--critical); }
+
+  .card-stats {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .stat-val { font-weight: 700; color: var(--text-secondary); }
+
+  .card-themes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .theme-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--surface-alt);
+    color: var(--text-secondary);
+  }
+
+  .card-notes {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* --- History sparkline --- */
+  .spark-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 24px;
+  }
+  .spark-bar {
+    flex: 1;
+    min-width: 4px;
+    max-width: 14px;
+    border-radius: 2px 2px 0 0;
+    background: var(--accent);
+    opacity: 0.6;
+    transition: opacity 0.15s;
+  }
+  .spark-bar:last-child { opacity: 1; }
+
+  /* --- Leads table --- */
+  .leads-table-wrap { overflow-x: auto; }
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .leads-table th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .leads-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  .leads-table tr:hover td { background: var(--surface-alt); }
+  .leads-table .name-cell {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .mf-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    margin-left: 4px;
+  }
+  .relevance-bar {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .rel-pip {
+    width: 6px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--score-track);
+  }
+  .rel-pip.on { background: var(--accent); }
+
+  /* --- Run log --- */
+  .run-log {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .run-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .run-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .run-status.success { background: var(--accent); }
+  .run-status.partial { background: var(--warning); }
+  .run-status.failed { background: var(--critical); }
+  .run-id {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 72px;
+  }
+  .run-detail { color: var(--text-secondary); }
+  .run-time { color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+  /* --- Empty state --- */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .empty-state p { font-size: 14px; max-width: 420px; margin: 0 auto; }
+
+  /* --- Section headers inside tabs --- */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 600px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; }
+  }
+</style>
+
+<div class="shell">
+  <div class="header">
+    <h1>Vendor<span>Bids</span> Intel</h1>
+    <div class="header-meta" id="header-meta">Loading data...</div>
+  </div>
+
+  <div class="kpi-strip" id="kpi-strip"></div>
+
+  <div class="tabs" id="tabs" role="tablist"></div>
+
+  <div id="panels"></div>
+</div>
+
+<script>
+(async function() {
+  let DATA;
+  try {
+    const resp = await fetch('data.json');
+    if (!resp.ok) throw new Error(resp.status);
+    DATA = await resp.json();
+  } catch(e) {
+    document.getElementById('header-meta').textContent = 'No data yet. Run the pipeline to populate.';
+    document.getElementById('panels').innerHTML = `
+      <div class="empty-state">
+        <h3>No pipeline data</h3>
+        <p>The dashboard populates after the first pipeline run. Trigger it manually from GitHub Actions or wait for the scheduled run.</p>
+      </div>`;
+    return;
+  }
+
+  // Header
+  const gen = new Date(DATA.generated_at);
+  document.getElementById('header-meta').textContent =
+    `Updated ${gen.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})} at ${gen.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'})}`;
+
+  // Segment targets
+  const competitors = DATA.targets.filter(t => t.category === 'competitor');
+  const operators = DATA.targets.filter(t => t.category === 'operator');
+  const contractors = DATA.targets.filter(t => t.category === 'contractor');
+  const leads = DATA.contractor_leads || [];
+  const runs = DATA.recent_runs || [];
+
+  // KPIs
+  const totalActive = DATA.targets.reduce((s,t) => s + (t.ads?.active || 0), 0);
+  const totalAds = DATA.targets.reduce((s,t) => s + (t.ads?.total || 0), 0);
+  const maxThreat = Math.max(...DATA.targets.map(t => t.latest?.threat_score || 0), 0);
+  const lastRun = runs[0];
+
+  document.getElementById('kpi-strip').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">Targets monitored</div>
+      <div class="kpi-value">${DATA.target_count}</div>
+      <div class="kpi-sub">${competitors.length} competitors, ${operators.length} operators, ${contractors.length} contractors</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Active ads tracked</div>
+      <div class="kpi-value">${totalActive}</div>
+      <div class="kpi-sub">${totalAds} total observed</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Peak score</div>
+      <div class="kpi-value">${maxThreat || '—'}<span style="font-size:14px;color:var(--text-muted)">/5</span></div>
+      <div class="kpi-sub">Highest threat / opportunity</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Contractor leads</div>
+      <div class="kpi-value">${leads.length}</div>
+      <div class="kpi-sub">Discovered via ad search</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Last run</div>
+      <div class="kpi-value" style="font-size:16px">${lastRun ? lastRun.status : '—'}</div>
+      <div class="kpi-sub">${lastRun ? new Date(lastRun.started_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'No runs yet'}</div>
+    </div>`;
+
+  // Tabs
+  const tabDefs = [
+    { id: 'competitors', label: 'Competitors', count: competitors.length },
+    { id: 'operators', label: 'Operators', count: operators.length },
+    { id: 'contractors', label: 'Contractors', count: contractors.length },
+    { id: 'leads', label: 'Leads', count: leads.length },
+    { id: 'runs', label: 'Run Log', count: runs.length },
+  ];
+
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+
+  tabDefs.forEach((td, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i === 0 ? ' active' : '');
+    btn.setAttribute('role', 'tab');
+    btn.innerHTML = `${td.label}<span class="badge">${td.count}</span>`;
+    btn.onclick = () => switchTab(td.id);
+    btn.dataset.tab = td.id;
+    tabsEl.appendChild(btn);
+  });
+
+  function switchTab(id) {
+    tabsEl.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+    panelsEl.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + id));
+  }
+
+  // Build panels
+  panelsEl.innerHTML = `
+    <div class="tab-panel active" id="panel-competitors">${renderTargetCards(competitors, 'competitor')}</div>
+    <div class="tab-panel" id="panel-operators">${renderTargetCards(operators, 'operator')}</div>
+    <div class="tab-panel" id="panel-contractors">${renderTargetCards(contractors, 'contractor')}</div>
+    <div class="tab-panel" id="panel-leads">${renderLeads(leads)}</div>
+    <div class="tab-panel" id="panel-runs">${renderRuns(runs)}</div>`;
+
+  function renderTargetCards(targets, cat) {
+    if (!targets.length) return `<div class="empty-state"><h3>No ${cat}s configured</h3><p>Add entries to competitors.yaml with category: ${cat}</p></div>`;
+
+    const scoreLabel = cat === 'competitor' ? 'Threat' : 'Opportunity';
+    const scoreFill = cat === 'competitor' ? 'filled-critical' : 'filled-accent';
+
+    return `<div class="card-grid">${targets.map(t => {
+      const s = t.latest || {};
+      const score = s.threat_score || 0;
+      const headline = s.headline || 'No analysis yet';
+      const isSteady = headline.includes('steady state') || headline === 'No analysis yet';
+      const themes = s.themes || [];
+      const hist = (t.history || []).slice(0, 8).reverse();
+
+      return `<div class="card">
+        <div class="card-head">
+          <div class="card-name">${esc(t.name)}</div>
+          <div class="card-category-pill pill-${cat}">${t.threat_level || cat}</div>
+        </div>
+        <div class="card-headline${isSteady ? ' steady' : ''}">${esc(headline)}</div>
+        <div class="card-scores">
+          <div class="score-group">
+            <div class="score-label">${scoreLabel}</div>
+            <div class="score-dots">${dots(score, 5, scoreFill)}</div>
+          </div>
+          ${hist.length ? `<div class="score-group" style="flex:1">
+            <div class="score-label">Activity (${hist.length}w)</div>
+            <div class="spark-row">${hist.map(h => {
+              const v = (h.new_count || 0) + (h.ended_count || 0);
+              const maxV = Math.max(...hist.map(x => (x.new_count||0)+(x.ended_count||0)), 1);
+              const pct = Math.max(8, (v / maxV) * 100);
+              return `<div class="spark-bar" style="height:${pct}%" title="Week ${h.week_of}: ${v} changes"></div>`;
+            }).join('')}</div>
+          </div>` : ''}
+        </div>
+        ${themes.length ? `<div class="card-themes">${themes.map(t => `<span class="theme-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+        <div class="card-stats">
+          <span><span class="stat-val">${t.ads?.active || 0}</span> active</span>
+          <span><span class="stat-val">${s.new_count || 0}</span> new</span>
+          <span><span class="stat-val">${s.ended_count || 0}</span> ended</span>
+        </div>
+        ${t.notes ? `<div class="card-notes">${esc(t.notes)}</div>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderLeads(leads) {
+    if (!leads.length) return `<div class="empty-state"><h3>No contractor leads yet</h3><p>Leads are discovered automatically when the pipeline runs with contractor discovery enabled.</p></div>`;
+
+    return `<div class="leads-table-wrap"><table class="leads-table">
+      <thead><tr>
+        <th>Name</th><th>Trade</th><th>Location</th><th>Fit</th><th>Ads</th><th>First seen</th><th>Contact</th>
+      </tr></thead>
+      <tbody>${leads.map(l => `<tr>
+        <td class="name-cell">${esc(l.page_name)}${l.serves_multifamily ? '<span class="mf-badge">MF</span>' : ''}</td>
+        <td>${esc(l.trade)}</td>
+        <td>${l.city && l.state ? esc(l.city + ', ' + l.state) : (l.state || '—')}</td>
+        <td><div class="relevance-bar">${relPips(l.relevance_score || 0, 5)}</div></td>
+        <td>${l.ad_count || 0}</td>
+        <td>${l.first_seen || '—'}</td>
+        <td style="font-size:12px">${[l.phone, l.email, l.website].filter(Boolean).map(esc).join('<br>') || '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function renderRuns(runs) {
+    if (!runs.length) return `<div class="empty-state"><h3>No pipeline runs yet</h3><p>Run the pipeline to see execution history here.</p></div>`;
+
+    return `<div class="run-log">${runs.map(r => `<div class="run-entry">
+      <div class="run-status ${r.status || 'unknown'}"></div>
+      <div class="run-id">${esc(r.run_id)}</div>
+      <div class="run-detail">
+        ${r.competitors_processed || 0} processed, ${r.competitors_failed || 0} failed${r.contractors_found ? `, ${r.contractors_found} leads` : ''}
+      </div>
+      <div class="run-time">${r.started_at ? new Date(r.started_at).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—'}</div>
+    </div>`).join('')}</div>`;
+  }
+
+  function dots(filled, total, cls) {
+    return Array.from({length: total}, (_, i) =>
+      `<div class="dot${i < filled ? ' ' + cls : ''}"></div>`
+    ).join('');
+  }
+
+  function relPips(filled, total) {
+    return Array.from({length: total}, (_, i) =>
+      `<div class="rel-pip${i < filled ? ' on' : ''}"></div>`
+    ).join('');
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+  }
+})();
+</script>

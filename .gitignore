@@ -13,3 +13,4 @@ state/slack_payloads/
 *.db-shm
 state/logs/
 .pytest_cache/
+site/data.json

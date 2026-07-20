@@ -1,8 +1,8 @@
-name: Weekly competitive digest
+name: Daily competitive digest
 
 on:
   schedule:
-    - cron: "0 15 * * 1"
+    - cron: "0 15 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -11,11 +11,16 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   digest:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +88,7 @@ jobs:
           fi
 
       - name: Post contractor leads to Slack
-        if: steps.check.outputs.has_leads == 'true'
+        if: steps.check.outputs.has_leads == 'true' && secrets.SLACK_BOT_TOKEN != ''
         id: slack_leads
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -99,7 +104,7 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post contractor trade details as thread replies
-        if: steps.check.outputs.has_leads == 'true'
+        if: steps.check.outputs.has_leads == 'true' && secrets.SLACK_BOT_TOKEN != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -118,7 +123,7 @@ jobs:
           done
 
       - name: Post competitor creative watch to Slack
-        if: steps.check.outputs.has_competitors == 'true'
+        if: steps.check.outputs.has_competitors == 'true' && secrets.SLACK_BOT_TOKEN != ''
         id: slack_parent
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -134,7 +139,7 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post competitor details as thread replies
-        if: steps.check.outputs.has_competitors == 'true'
+        if: steps.check.outputs.has_competitors == 'true' && secrets.SLACK_BOT_TOKEN != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -153,7 +158,7 @@ jobs:
           done
 
       - name: Post operator intelligence to Slack
-        if: steps.check.outputs.has_operators == 'true'
+        if: steps.check.outputs.has_operators == 'true' && secrets.SLACK_BOT_TOKEN != ''
         id: slack_operators
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -169,7 +174,7 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post operator details as thread replies
-        if: steps.check.outputs.has_operators == 'true'
+        if: steps.check.outputs.has_operators == 'true' && secrets.SLACK_BOT_TOKEN != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -188,7 +193,7 @@ jobs:
           done
 
       - name: Post vendor intelligence to Slack
-        if: steps.check.outputs.has_contractor_intel == 'true'
+        if: steps.check.outputs.has_contractor_intel == 'true' && secrets.SLACK_BOT_TOKEN != ''
         id: slack_vendor_intel
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -204,7 +209,7 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post vendor intel details as thread replies
-        if: steps.check.outputs.has_contractor_intel == 'true'
+        if: steps.check.outputs.has_contractor_intel == 'true' && secrets.SLACK_BOT_TOKEN != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -222,17 +227,27 @@ jobs:
             sleep 1
           done
 
-      - name: Alert on failure
-        if: failure()
-        uses: slackapi/slack-github-action@v4.0.0
+      - name: Export dashboard data
+        run: python -m src.export
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: ${{ secrets.SLACK_CHANNEL_ID }}
-            text: ":warning: Competitive intel pipeline failed this week."
-            blocks:
-              - type: "section"
-                text:
-                  type: "mrkdwn"
-                  text: ":warning: *Competitive intel pipeline failed.* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>"
+          path: site/
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Alert on failure
+        if: failure() && env.SLACK_BOT_TOKEN != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && exit 0
+          curl -s -X POST \
+            -H "Content-type: application/json" \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -d "{\"channel\":\"$CHANNEL_ID\",\"text\":\":warning: Competitive intel pipeline failed. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View logs>\"}" \
+            https://slack.com/api/chat.postMessage
