@@ -88,12 +88,13 @@ jobs:
           fi
 
       - name: Post contractor leads to Slack
-        if: steps.check.outputs.has_leads == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_leads == 'true'
         id: slack_leads
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && echo "No Slack token, skipping" && exit 0
           jq --arg ch "$CHANNEL_ID" '. + {channel: $ch}' \
             state/slack_payloads/leads_parent.json > /tmp/parent_payload.json
           resp=$(curl -s -X POST \
@@ -104,12 +105,13 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post contractor trade details as thread replies
-        if: steps.check.outputs.has_leads == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_leads == 'true'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           THREAD_TS: ${{ steps.slack_leads.outputs.ts }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && exit 0
           for f in state/slack_payloads/leads_reply_*.json; do
             [ -f "$f" ] || continue
             jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
@@ -123,12 +125,13 @@ jobs:
           done
 
       - name: Post competitor creative watch to Slack
-        if: steps.check.outputs.has_competitors == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_competitors == 'true'
         id: slack_parent
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && echo "No Slack token, skipping" && exit 0
           jq --arg ch "$CHANNEL_ID" '. + {channel: $ch}' \
             state/slack_payloads/parent.json > /tmp/parent_payload.json
           resp=$(curl -s -X POST \
@@ -139,12 +142,13 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post competitor details as thread replies
-        if: steps.check.outputs.has_competitors == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_competitors == 'true'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           THREAD_TS: ${{ steps.slack_parent.outputs.ts }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && exit 0
           for f in state/slack_payloads/reply_*.json; do
             [ -f "$f" ] || continue
             jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
@@ -158,12 +162,13 @@ jobs:
           done
 
       - name: Post operator intelligence to Slack
-        if: steps.check.outputs.has_operators == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_operators == 'true'
         id: slack_operators
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && echo "No Slack token, skipping" && exit 0
           jq --arg ch "$CHANNEL_ID" '. + {channel: $ch}' \
             state/slack_payloads/operator_parent.json > /tmp/parent_payload.json
           resp=$(curl -s -X POST \
@@ -174,12 +179,13 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post operator details as thread replies
-        if: steps.check.outputs.has_operators == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_operators == 'true'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           THREAD_TS: ${{ steps.slack_operators.outputs.ts }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && exit 0
           for f in state/slack_payloads/operator_reply_*.json; do
             [ -f "$f" ] || continue
             jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
@@ -193,12 +199,13 @@ jobs:
           done
 
       - name: Post vendor intelligence to Slack
-        if: steps.check.outputs.has_contractor_intel == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_contractor_intel == 'true'
         id: slack_vendor_intel
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && echo "No Slack token, skipping" && exit 0
           jq --arg ch "$CHANNEL_ID" '. + {channel: $ch}' \
             state/slack_payloads/contractor_intel_parent.json > /tmp/parent_payload.json
           resp=$(curl -s -X POST \
@@ -209,12 +216,13 @@ jobs:
           echo "ts=$(echo "$resp" | jq -r '.ts')" >> "$GITHUB_OUTPUT"
 
       - name: Post vendor intel details as thread replies
-        if: steps.check.outputs.has_contractor_intel == 'true' && secrets.SLACK_BOT_TOKEN != ''
+        if: steps.check.outputs.has_contractor_intel == 'true'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           THREAD_TS: ${{ steps.slack_vendor_intel.outputs.ts }}
         run: |
+          [ -z "$SLACK_BOT_TOKEN" ] && exit 0
           for f in state/slack_payloads/contractor_intel_reply_*.json; do
             [ -f "$f" ] || continue
             jq --arg ch "$CHANNEL_ID" --arg ts "$THREAD_TS" \
@@ -240,7 +248,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Alert on failure
-        if: failure() && env.SLACK_BOT_TOKEN != ''
+        if: failure()
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
