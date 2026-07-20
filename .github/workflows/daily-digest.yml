@@ -35,7 +35,7 @@ jobs:
       - name: Pull SQLite state
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python -c "from src.storage import pull; pull()"
+        run: python -c "from src.storage import pull; pull()" || echo "State pull failed, starting fresh"
 
       - name: Run pipeline
         env:
@@ -47,7 +47,7 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python -c "from src.storage import push; push()"
+        run: python -c "from src.storage import push; push()" || echo "State push failed"
 
       - name: Upload pipeline logs
         if: always()
