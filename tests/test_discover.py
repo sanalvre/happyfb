@@ -103,7 +103,7 @@ class TestSearchAdsByTerm:
         call_args = mock_get.call_args
         params = call_args.kwargs.get("params") or call_args[1].get("params") or call_args[0][1] if len(call_args[0]) > 1 else call_args.kwargs["params"]
         assert params["search_terms"] == "commercial plumber"
-        assert params["ad_active_status"] == "ACTIVE"
+        assert params["ad_active_status"] == "all"
 
 
 class TestDiscoverContractors:

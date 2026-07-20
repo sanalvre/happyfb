@@ -16,14 +16,11 @@ FIELDS = ",".join([
     "id",
     "ad_creative_bodies",
     "ad_creative_link_titles",
-    "ad_creative_link_captions",
-    "ad_creative_link_descriptions",
     "page_name",
     "page_id",
     "ad_delivery_start_time",
     "ad_delivery_stop_time",
     "ad_snapshot_url",
-    "languages",
     "publisher_platforms",
 ])
 
@@ -38,8 +35,8 @@ def fetch_ads(competitor: dict, access_token: str | None = None) -> list[dict]:
     params = {
         "access_token": token,
         "search_page_ids": competitor["page_id"],
-        "ad_reached_countries": "US",
-        "ad_active_status": "ALL",
+        "ad_reached_countries": '["US"]',
+        "ad_active_status": "all",
         "fields": FIELDS,
         "limit": 500,
     }

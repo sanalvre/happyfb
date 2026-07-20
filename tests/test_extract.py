@@ -133,7 +133,7 @@ class TestFetchAds:
         call_args = mock_get.call_args
         params = call_args.kwargs.get("params") or call_args[1].get("params")
         assert params["search_page_ids"] == sample_competitor["page_id"]
-        assert params["ad_reached_countries"] == "US"
+        assert params["ad_reached_countries"] == '["US"]'
         assert "id" in params["fields"]
 
 

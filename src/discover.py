@@ -48,9 +48,9 @@ def search_ads_by_term(search_term: str, access_token: str | None = None,
     params = {
         "access_token": token,
         "search_terms": search_term,
-        "ad_reached_countries": "US",
-        "ad_active_status": "ACTIVE",
-        "ad_type": "ALL",
+        "ad_reached_countries": '["US"]',
+        "ad_active_status": "all",
+        "ad_type": "all",
         "fields": FIELDS,
         "limit": min(limit, 500),
     }
